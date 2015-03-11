@@ -40,7 +40,7 @@ import com.myapp.getlocation.View.InsertScenicPointLayout;
 import com.myapp.getlocation.View.ScenePointListView;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.db.EntityHelper;
-import com.myapp.getlocation.entity.ScenicPointModel;
+import com.myapp.getlocation.entity.ScenicSpotModel;
 
 public class MainActivity extends Activity {
 
@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
 	private boolean locByHand = false;
 	private Marker mMarker;
 	private InfoWindow mInfoWindow;
-	private ArrayList<ScenicPointModel> listScenicPoints;
+	private ArrayList<ScenicSpotModel> listScenicPoints;
 	//
 	BitmapDescriptor bdLocation = BitmapDescriptorFactory
 			.fromResource(R.drawable.composer_place);
@@ -62,24 +62,19 @@ public class MainActivity extends Activity {
 	private LocationClient mLocClient;
 	private MyLocationListenner myListener = new MyLocationListenner();
 	
-	private Dao<ScenicPointModel, Integer> dao;
+	private Dao<ScenicSpotModel, Integer> dao;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-//		ArcMenu arcMenu = (ArcMenu) findViewById(R.id.arc_menu);
-//        ArcMenu arcMenu2 = (ArcMenu) findViewById(R.id.arc_menu_2);
-
-//        initArcMenu(arcMenu, ITEM_DRAWABLES);
-//        initArcMenu(arcMenu2, ITEM_DRAWABLES);
 		try {
-			dao = getEntityHelper().getDao(ScenicPointModel.class);
+			dao = getEntityHelper().getDao(ScenicSpotModel.class);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		
-		listScenicPoints = new ArrayList<ScenicPointModel>();
+		listScenicPoints = new ArrayList<ScenicSpotModel>();
 		initData();
 
 		RayMenu rayMenu = (RayMenu) findViewById(R.id.ray_menu);
@@ -237,10 +232,10 @@ public class MainActivity extends Activity {
 	private void initData() {
 		listScenicPoints.clear();
 		if (dao != null) {
-			CloseableIterator<ScenicPointModel> iterator = dao.iterator();
+			CloseableIterator<ScenicSpotModel> iterator = dao.iterator();
 			
 			while (iterator.hasNext()) {
-				ScenicPointModel entity = iterator.next();
+				ScenicSpotModel entity = iterator.next();
 
 				listScenicPoints.add(entity);
 
@@ -290,9 +285,9 @@ public class MainActivity extends Activity {
 			// map view
 			if (location == null || mMapView == null)
 				return;
-			Toast.makeText(MainActivity.this, "" + location.getAltitude() + ","
-					+ location.getLatitude(), Toast.LENGTH_SHORT)
-				.show();
+//			Toast.makeText(MainActivity.this, "" + location.getAltitude() + ","
+//					+ location.getLatitude(), Toast.LENGTH_SHORT)
+//				.show();
 			MyLocationData locData = new MyLocationData.Builder()
 					.accuracy(location.getRadius())
 					//

@@ -17,7 +17,7 @@ import android.widget.Toast;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.adapter.ClassAttachmentImpl;
 import com.myapp.getlocation.adapter.IAttachment;
-import com.myapp.getlocation.entity.ScenicPointModel;
+import com.myapp.getlocation.entity.ScenicSpotModel;
 
 /**
  * 
@@ -37,10 +37,10 @@ public class ScenePointListView extends LinearLayout {
 	private View layout;
 	private ViewAdapter viewAdapter;
 	
-	private ArrayList<ScenicPointModel> scenicPoints;
+	private ArrayList<ScenicSpotModel> scenicPoints;
 	private ListView list = null;
 	
-	public ScenePointListView(Context context, ArrayList<ScenicPointModel> scenicPoints) {
+	public ScenePointListView(Context context, ArrayList<ScenicSpotModel> scenicPoints) {
 		super(context);
 		this.context = context;
 		this.scenicPoints = scenicPoints;
@@ -60,9 +60,9 @@ public class ScenePointListView extends LinearLayout {
 	}
 }
 
-class ViewAdapter extends ArrayAdapter<ScenicPointModel> {
+class ViewAdapter extends ArrayAdapter<ScenicSpotModel> {
 
-	public ViewAdapter(Context context, List<ScenicPointModel> objects) {
+	public ViewAdapter(Context context, List<ScenicSpotModel> objects) {
 		super(context, 0, objects);
 		this.context = context;
 		fileList = objects;
@@ -73,7 +73,7 @@ class ViewAdapter extends ArrayAdapter<ScenicPointModel> {
 
 
 	private LayoutInflater mInflater;
-	private List<ScenicPointModel> fileList;
+	private List<ScenicSpotModel> fileList;
 	private Context context;
 
 	public View getView(final int position, View convertView, ViewGroup parent) {
@@ -86,16 +86,16 @@ class ViewAdapter extends ArrayAdapter<ScenicPointModel> {
 		}
 		
 		// 获取数据bean
-		ScenicPointModel bean = fileList.get(position);
+		ScenicSpotModel bean = fileList.get(position);
 		TextView txtView = (TextView) view.findViewById(R.id.txtScenicPoint);
 		
 		/*
 		 * 声明的类改为ClassAttachmentImpl
 		 */
-		IAttachment<ScenicPointModel> binder = new ClassAttachmentImpl<ScenicPointModel>();
+		IAttachment<ScenicSpotModel> binder = new ClassAttachmentImpl<ScenicSpotModel>();
 		try {
 			binder.attachToView(context, view, bean);
-			txtView.setText(bean.getScenicspointId());
+			txtView.setText(bean.getSpotId());
 			
 		} catch (Exception e) {
 			Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();

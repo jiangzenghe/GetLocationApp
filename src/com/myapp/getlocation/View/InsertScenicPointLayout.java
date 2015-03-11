@@ -18,7 +18,7 @@ import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.db.EntityHelper;
-import com.myapp.getlocation.entity.ScenicPointModel;
+import com.myapp.getlocation.entity.ScenicSpotModel;
 
 public class InsertScenicPointLayout extends LinearLayout {
 
@@ -29,7 +29,7 @@ public class InsertScenicPointLayout extends LinearLayout {
 	private TextView longitudeTxt;
 	private BaiduMap mBaiduMap;
 	
-	private Dao<ScenicPointModel, Integer> dao;
+	private Dao<ScenicSpotModel, Integer> dao;
 	private LatLng latLng;
 	public InsertScenicPointLayout(Context context) {
 		this(context, null);
@@ -75,20 +75,19 @@ public class InsertScenicPointLayout extends LinearLayout {
 		if(dao == null) {
 			return;
 		}
-		ScenicPointModel entity = new ScenicPointModel();
+		ScenicSpotModel entity = new ScenicSpotModel();
 		
 		entity.setScenicId("221");//test
-		entity.setScenicName("龙口南山景区");
-		entity.setScenicspointId("10001");//test
+		entity.setSpotId("10001");//test
 		entity.setScenicspotName("南山牌坊");
 		entity.setAbsoluteLatitude(Double.parseDouble(latitudeTxt.getText().toString()));
 		entity.setAbsoluteLongitude(Double.parseDouble(longitudeTxt.getText().toString()));
 		entity.setSubmited(false);
 		try {
 			boolean isHave=false;
-			List<ScenicPointModel> tempModel=dao.queryForEq("scenicId", entity.getScenicId());
+			List<ScenicSpotModel> tempModel=dao.queryForEq("scenicId", entity.getScenicId());
 			for(int i=0;i<tempModel.size();i++){
-				if(tempModel.get(i).getScenicspointId().equals(entity.getScenicspointId()))
+				if(tempModel.get(i).getSpotId().equals(entity.getSpotId()))
 				{isHave=true;
 				break;}
 			}
@@ -134,11 +133,11 @@ public class InsertScenicPointLayout extends LinearLayout {
 		this.mBaiduMap = mBaiduMap;
 	}
 
-	public Dao<ScenicPointModel, Integer> getDao() {
+	public Dao<ScenicSpotModel, Integer> getDao() {
 		return dao;
 	}
 
-	public void setDao(Dao<ScenicPointModel, Integer> dao) {
+	public void setDao(Dao<ScenicSpotModel, Integer> dao) {
 		this.dao = dao;
 	}
 	

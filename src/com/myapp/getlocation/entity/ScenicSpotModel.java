@@ -6,8 +6,8 @@ import com.j256.ormlite.table.DatabaseTable;
 /**
  * 
  */
-@DatabaseTable(tableName="SCENIC_POINT")
-public class ScenicPointModel {
+@DatabaseTable(tableName="SCENIC_SPOT")
+public class ScenicSpotModel {
 	@DatabaseField(generatedId=true)
 	private Integer id;
 	@DatabaseField(width=20)
@@ -15,9 +15,7 @@ public class ScenicPointModel {
 	@DatabaseField(width=20)
     private String scenicId;//场景id
 	@DatabaseField(width=20)
-    private String scenicName;//场景名称
-	@DatabaseField(width=20)
-	private String scenicspointId;
+	private String spotId;//经典id
 	@DatabaseField(width=20)
     private String scenicspotName;//场景分景点
 	@DatabaseField()
@@ -40,23 +38,17 @@ public class ScenicPointModel {
 	public void setCreatedTime(String createdTime) {
 		this.createdTime = createdTime;
 	}
-	public String getScenicspointId() {
-		return scenicspointId;
+	public String getSpotId() {
+		return spotId;
 	}
-	public void setScenicspointId(String scenicspointId) {
-		this.scenicspointId = scenicspointId;
+	public void setSpotId(String spotId) {
+		this.spotId = spotId;
 	}
 	public String getScenicId() {
 		return scenicId;
 	}
 	public void setScenicId(String scenicId) {
 		this.scenicId = scenicId;
-	}
-	public String getScenicName() {
-		return scenicName;
-	}
-	public void setScenicName(String scenicName) {
-		this.scenicName = scenicName;
 	}
 	public String getScenicspotName() {
 		return scenicspotName;
