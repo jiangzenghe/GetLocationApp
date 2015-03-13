@@ -14,7 +14,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.LinearLayout.LayoutParams;
 
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.adapter.ClassAttachmentImpl;
@@ -33,16 +32,16 @@ import com.myapp.getlocation.entity.ScenicSpotModel;
  *         </p>
  *         <p>
  */
-public class ScenePointListView extends LinearLayout {
+public class SceneSectionPointView extends LinearLayout {
 	private Context context;
 	private LayoutInflater mInflate;
 	private View layout;
-	private SpotViewAdapter viewAdapter;
+	private SectionViewAdapter viewAdapter;
 	
 	private ArrayList<ScenicSpotModel> scenicPoints;
 	private ListView list = null;
 	
-	public ScenePointListView(Context context, ArrayList<ScenicSpotModel> scenicPoints) {
+	public SceneSectionPointView(Context context, ArrayList<ScenicSpotModel> scenicPoints) {
 		super(context);
 		this.context = context;
 		this.scenicPoints = scenicPoints;
@@ -56,7 +55,7 @@ public class ScenePointListView extends LinearLayout {
 
 		list = (ListView) findViewById(R.id.listview);
 
-		viewAdapter = new SpotViewAdapter(this.context, scenicPoints);
+		viewAdapter = new SectionViewAdapter(this.context, scenicPoints);
 		if(scenicPoints != null) {
 			list.setAdapter(viewAdapter);
 		}
@@ -64,9 +63,9 @@ public class ScenePointListView extends LinearLayout {
 	}
 }
 
-class SpotViewAdapter extends ArrayAdapter<ScenicSpotModel> {
+class SectionViewAdapter extends ArrayAdapter<ScenicSpotModel> {
 
-	public SpotViewAdapter(Context context, List<ScenicSpotModel> objects) {
+	public SectionViewAdapter(Context context, List<ScenicSpotModel> objects) {
 		super(context, 0, objects);
 		this.context = context;
 		fileList = objects;

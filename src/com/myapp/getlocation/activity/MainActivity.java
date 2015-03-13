@@ -1,6 +1,5 @@
 package com.myapp.getlocation.activity;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 
 import android.app.Activity;
@@ -33,19 +32,20 @@ import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.capricorn.ArcMenu;
 import com.capricorn.RayMenu;
-import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.View.InsertScenicPointLayout;
 import com.myapp.getlocation.View.ScenePointListView;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.db.EntityHelper;
+import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
+import com.myapp.getlocation.util.ScenicDataInitHelper;
 
 public class MainActivity extends Activity {
 
-	private static final int[] ITEM_DRAWABLES = { R.drawable.composer_camera, R.drawable.composer_music,
-		R.drawable.composer_place, R.drawable.composer_sleep, R.drawable.composer_thought, R.drawable.composer_with };
+	private static final int[] ITEM_DRAWABLES = {
+		R.drawable.composer_place, R.drawable.composer_thought, R.drawable.composer_with };
 	
 	private ImageView imgLoc;
 	private MapView mMapView;
@@ -57,25 +57,22 @@ public class MainActivity extends Activity {
 	private ArrayList<ScenicSpotModel> listScenicPoints;
 	//
 	BitmapDescriptor bdLocation = BitmapDescriptorFactory
-			.fromResource(R.drawable.composer_place);
+			.fromResource(R.drawable.location);
 	//
 	private LocationClient mLocClient;
 	private MyLocationListenner myListener = new MyLocationListenner();
 	
 	private Dao<ScenicSpotModel, Integer> dao;
+	private Dao<ScenicModel, Integer> daoScenics;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		try {
-			dao = getEntityHelper().getDao(ScenicSpotModel.class);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
 		listScenicPoints = new ArrayList<ScenicSpotModel>();
-		initData();
+		ScenicDataInitHelper dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
+		dataInitHelper.setListScenicPoints(listScenicPoints);
+		dataInitHelper.onCreate();
 
 		RayMenu rayMenu = (RayMenu) findViewById(R.id.ray_menu);
         final int itemCount = ITEM_DRAWABLES.length;
@@ -88,7 +85,13 @@ public class MainActivity extends Activity {
 
 				@Override
 				public void onClick(View v) {
-					Toast.makeText(MainActivity.this, "position:" + position, Toast.LENGTH_SHORT).show();
+					if(position == 0) {
+						Toast.makeText(MainActivity.this, "收集路段内的点", Toast.LENGTH_SHORT).show();
+					} else if(position == 1) {
+						Toast.makeText(MainActivity.this, "提交已收集的景点", Toast.LENGTH_SHORT).show();
+					} else if(position == 2) {
+						Toast.makeText(MainActivity.this, "提交已收集的路段", Toast.LENGTH_SHORT).show();
+					}
 					functionList(position);
 				}
 			});// Add a menu item
@@ -124,20 +127,16 @@ public class MainActivity extends Activity {
 			public boolean onMarkerClick(final Marker marker) {
 				Toast.makeText(MainActivity.this, "click", Toast.LENGTH_SHORT).show();
 				
-				InsertScenicPointLayout layout = new InsertScenicPointLayout(getApplicationContext());
+				InsertScenicPointLayout layout = new InsertScenicPointLayout(MainActivity.this);
 				LatLng ll = marker.getPosition();
 				layout.setLatLng(ll);
 				layout.setmBaiduMap(mBaiduMap);
-				if(dao != null) {
+				if(daoScenics != null) {
+					layout.setDaoScenics(daoScenics);
 					layout.setDao(dao);
 				}
-//				OnInfoWindowClickListener listener = null;
-//				listener = new OnInfoWindowClickListener() {
-//					public void onInfoWindowClick() {
-//						mBaiduMap.hideInfoWindow();
-//					}
-//				};
-				mInfoWindow = new InfoWindow(layout, ll, -47);
+				layout.setListScenicPoints(listScenicPoints);
+				mInfoWindow = new InfoWindow(layout, ll, 0);
 				mBaiduMap.showInfoWindow(mInfoWindow);
 				return true;
 			}
@@ -176,13 +175,23 @@ public class MainActivity extends Activity {
 	
 	private void functionList(int position) {
 		if(position == 0) {
+			String[] items = {"1-秦皇宫至明城陵","2-明城陵至三仙观"};
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
-			.setTitle("线内含点列表收集")
-			.setView(new ScenePointListView(MainActivity.this, listScenicPoints))
+			.setTitle("收集路段内含点列表")
+			.setMessage("开始收集某路段的构成点")
+			.setItems(items, new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					// TODO Auto-generated method stub
+					
+				}
+			})
 			.setPositiveButton("确认", new DialogInterface.OnClickListener() {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
+					imgLoc.setImageResource(R.drawable.pause);
 				}
 			})
 			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -194,9 +203,9 @@ public class MainActivity extends Activity {
 			alertDialog.show();
 		} else if(position ==1) {
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
-			.setTitle("点数据库列表提交")
+			.setTitle("已采集点数据库列表提交")
 			.setView(new ScenePointListView(MainActivity.this, listScenicPoints))
-			.setPositiveButton("确认", new DialogInterface.OnClickListener() {
+			.setPositiveButton("提交", new DialogInterface.OnClickListener() {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
@@ -211,8 +220,7 @@ public class MainActivity extends Activity {
 			alertDialog.show();
 		} else if(position ==2) {
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
-			.setTitle("线数据库列表提交")
-			.setView(new ScenePointListView(MainActivity.this, listScenicPoints))
+			.setTitle("路段内点数据提交")
 			.setPositiveButton("确认", new DialogInterface.OnClickListener() {
 				
 				@Override
@@ -229,20 +237,6 @@ public class MainActivity extends Activity {
 		}
 	}
 	
-	private void initData() {
-		listScenicPoints.clear();
-		if (dao != null) {
-			CloseableIterator<ScenicSpotModel> iterator = dao.iterator();
-			
-			while (iterator.hasNext()) {
-				ScenicSpotModel entity = iterator.next();
-
-				listScenicPoints.add(entity);
-
-			}
-		}
-	}
-	
 	/**
 	 *　获取应用全局的实体处理器对象
 	 * @return EntityHelper实体处理器对象
@@ -254,7 +248,7 @@ public class MainActivity extends Activity {
 	
 	private void addOverlay(LatLng ll) {
 		OverlayOptions oo = new MarkerOptions().position(ll).icon(bdLocation)
-				.zIndex(9).draggable(true);
+				.zIndex(9).draggable(false);
 		mMarker = (Marker) (mBaiduMap.addOverlay(oo));
 	}
 	
@@ -315,6 +309,30 @@ public class MainActivity extends Activity {
 
 		public void onReceivePoi(BDLocation poiLocation) {
 		}
+	}
+
+	public Dao<ScenicSpotModel, Integer> getDao() {
+		return dao;
+	}
+
+	public void setDao(Dao<ScenicSpotModel, Integer> dao) {
+		this.dao = dao;
+	}
+
+	public Dao<ScenicModel, Integer> getDaoScenics() {
+		return daoScenics;
+	}
+
+	public void setDaoScenics(Dao<ScenicModel, Integer> daoScenics) {
+		this.daoScenics = daoScenics;
+	}
+
+	public ArrayList<ScenicSpotModel> getListScenicPoints() {
+		return listScenicPoints;
+	}
+
+	public void setListScenicPoints(ArrayList<ScenicSpotModel> listScenicPoints) {
+		this.listScenicPoints = listScenicPoints;
 	}
 
 }

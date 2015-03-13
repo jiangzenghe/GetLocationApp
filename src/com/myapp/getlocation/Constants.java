@@ -8,14 +8,14 @@ public class Constants {
     public static final String SHAREDPREFERENCES_NAME = "Travel";
     public static final String API_MESSAGE_KEY = "API_MESSAGE_KEY";
     public static final String SCIENCE_ID_KEY = "SCIENCE_ID_KEY";
+    public static final String INDEX_FLAG = "INDEX_FLAG";
     public static final String SCIENCE_LINE_ID_KEY = "SCIENCE_LINE_ID_KEY";
     public final static String DATABASE_NAME = "imyuu";
     //单个景区保存路径
     public static final String SCENIC_SINGLE_FILE_PATH = Environment.getExternalStorageDirectory() + "/imyuu/scenic";
-    public static final String SCENIC_ADVERT_FILE_PATH = Environment.getExternalStorageDirectory() + "/imyuu/scenicAdvert";
-    public static final String SCENIC_RECOMMEND_FILE_PATH = Environment.getExternalStorageDirectory() + "/imyuu/scenicRecommend";
 
     public static final String SCENIC_ROUTER_FILE_PATH = "imyuu/";
+    public static final String SCENIC_IMAGE_FILE_PATH = Environment.getExternalStorageDirectory() + "/imyuu/scenic/";
 
     public static final String API_ALL_SCENIC_DOWNLOAD = "http://www.imyuu.com/trip/allScenicScenicAreaAction.action";
     public static final String API_SINGLE_SCENIC_DOWNLOAD = "http://www.imyuu.com/trip/oneScenicScenicAreaAction.action?scenicId=";
