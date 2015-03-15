@@ -26,6 +26,7 @@ import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.activity.MainActivity;
+import com.myapp.getlocation.entity.ScenicLineModel;
 import com.myapp.getlocation.entity.ScenicLineSectionModel;
 import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
@@ -40,6 +41,7 @@ public class ScenicDataInitHelper {
 	private Dao<ScenicModel, Integer> daoModel;
 	private Dao<ScenicSpotModel, Integer> daoSpot;
 	private Dao<ScenicLineSectionModel, Integer> daoSection;
+	private Dao<ScenicLineModel, Integer> daoLine;
 	private ArrayList<ScenicSpotModel> listScenicPoints;
 	private ArrayList<ScenicModel> listScenics;
 	
@@ -60,6 +62,7 @@ public class ScenicDataInitHelper {
 		context.setDao(daoSpot);
 		context.setDaoScenics(daoModel);
 		context.setListScenicPoints(listScenicPoints);
+		context.setListScenics(listScenics);
 		
 	}
 	
@@ -68,6 +71,7 @@ public class ScenicDataInitHelper {
 			daoModel = context.getEntityHelper().getDao(ScenicModel.class);
 			daoSpot = context.getEntityHelper().getDao(ScenicSpotModel.class);
 			daoSection = context.getEntityHelper().getDao(ScenicLineSectionModel.class);
+			daoLine = context.getEntityHelper().getDao(ScenicLineModel.class);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -80,6 +84,22 @@ public class ScenicDataInitHelper {
 
 				listScenicPoints.add(entity);
 
+			}
+		}
+	}
+	
+	public void initSpotAndLine(String scenicId) {
+		
+	}
+	
+	private void searchScenicsData() {
+		if (daoModel != null) {
+			CloseableIterator<ScenicModel> iterator = daoModel.iterator();
+			
+			while (iterator.hasNext()) {
+				ScenicModel entity = iterator.next();
+
+				listScenics.add(entity);
 			}
 		}
 	}
@@ -194,6 +214,7 @@ public class ScenicDataInitHelper {
 	                        }
 	                        Toast.makeText(context, "数据加载成功", Toast.LENGTH_SHORT).show();
 	                        progressDialog.dismiss();
+	                        searchScenicsData();
 	                        
 	                    } catch (Exception ex) {
 	                        ex.printStackTrace();

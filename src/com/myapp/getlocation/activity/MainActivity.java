@@ -54,7 +54,10 @@ public class MainActivity extends Activity {
 	private boolean locByHand = false;
 	private Marker mMarker;
 	private InfoWindow mInfoWindow;
+	
+	private ScenicDataInitHelper dataInitHelper;
 	private ArrayList<ScenicSpotModel> listScenicPoints;
+	private ArrayList<ScenicModel> listScenics;
 	//
 	BitmapDescriptor bdLocation = BitmapDescriptorFactory
 			.fromResource(R.drawable.location);
@@ -70,8 +73,10 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 		
 		listScenicPoints = new ArrayList<ScenicSpotModel>();
-		ScenicDataInitHelper dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
+		listScenics = new ArrayList<ScenicModel>();
+		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
 		dataInitHelper.setListScenicPoints(listScenicPoints);
+		dataInitHelper.setListScenics(listScenics);
 		dataInitHelper.onCreate();
 
 		RayMenu rayMenu = (RayMenu) findViewById(R.id.ray_menu);
@@ -294,6 +299,25 @@ public class MainActivity extends Activity {
 						location.getLongitude());
 				MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
 				mBaiduMap.animateMapStatus(u);
+				
+				if(listScenics.size() > 0) {
+					final String[] items = new String[listScenics.size()];
+					for(ScenicModel each:listScenics) {
+						items[listScenics.indexOf(each)] = each.getScenicName();
+					}
+					Dialog dialogChooseArea = new AlertDialog.Builder(MainActivity.this)
+					.setTitle("请选择景区")
+					.setItems(items, new DialogInterface.OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							dataInitHelper.initSpotAndLine(listScenics.get(which).getScenicId());
+						}
+					})
+					.create();
+					dialogChooseArea.show();
+				}
 			}
 			if(locByHand) {
 				locByHand = false;
@@ -333,6 +357,14 @@ public class MainActivity extends Activity {
 
 	public void setListScenicPoints(ArrayList<ScenicSpotModel> listScenicPoints) {
 		this.listScenicPoints = listScenicPoints;
+	}
+
+	public ArrayList<ScenicModel> getListScenics() {
+		return listScenics;
+	}
+
+	public void setListScenics(ArrayList<ScenicModel> listScenics) {
+		this.listScenics = listScenics;
 	}
 
 }

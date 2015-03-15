@@ -163,6 +163,7 @@ public class InsertScenicPointLayout extends LinearLayout {
 
 	}
 	
+	//may be deprecated
 	private void searchData() {
 		if (daoScenics != null) {
 			CloseableIterator<ScenicModel> iterator = daoScenics.iterator();
