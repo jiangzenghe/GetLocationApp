@@ -42,7 +42,6 @@ public class InsertScenicPointLayout extends LinearLayout {
 	private LatLng latLng;
 	public InsertScenicPointLayout(Context context) {
 		this(context, null);
-
 	}
 
 	public InsertScenicPointLayout(final Context context, AttributeSet attrs) {
@@ -62,6 +61,7 @@ public class InsertScenicPointLayout extends LinearLayout {
         Button cancelBtn = (Button) this.findViewById(R.id.button_cancel);
         Button okBtn = (Button) this.findViewById(R.id.button_ok);
         listScenics = new ArrayList<ScenicModel>();
+        listScenicPoints = new ArrayList<ScenicSpotModel>();
         
         okBtn.setOnClickListener(new View.OnClickListener() {
 			
@@ -86,10 +86,10 @@ public class InsertScenicPointLayout extends LinearLayout {
 			@Override
 			public void onClick(View v) {
 				searchData();
-				if(listScenics.size() > 0) {
-					final String[] items = new String[listScenics.size()];
-					for(ScenicModel each:listScenics) {
-						items[listScenics.indexOf(each)] = each.getScenicName();
+				if(listScenicPoints.size() > 0) {
+					final String[] items = new String[listScenicPoints.size()];
+					for(ScenicSpotModel each:listScenicPoints) {
+						items[listScenicPoints.indexOf(each)] = each.getScenicspotName();
 					}
 					
 					Dialog alertDialog = new AlertDialog.Builder(context)
@@ -99,7 +99,7 @@ public class InsertScenicPointLayout extends LinearLayout {
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
 							scenicSpotTxt.setText(items[which]);
-							scenicSpotIdTxt.setText(listScenics.get(which).getScenicId());
+							scenicSpotIdTxt.setText(listScenicPoints.get(which).getSpotId());
 						}
 					})
 					.setPositiveButton("确认", new DialogInterface.OnClickListener() {
@@ -107,7 +107,7 @@ public class InsertScenicPointLayout extends LinearLayout {
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
 							scenicSpotTxt.setText(items[which]);
-							scenicSpotIdTxt.setText(listScenics.get(which).getScenicId());
+							scenicSpotIdTxt.setText(listScenicPoints.get(which).getSpotId());
 						}
 					})
 					.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -172,6 +172,15 @@ public class InsertScenicPointLayout extends LinearLayout {
 				ScenicModel entity = iterator.next();
 
 				listScenics.add(entity);
+			}
+		}
+		if (dao != null) {
+			CloseableIterator<ScenicSpotModel> iterator = dao.iterator();
+			
+			while (iterator.hasNext()) {
+				ScenicSpotModel entity = iterator.next();
+
+				listScenicPoints.add(entity);
 			}
 		}
 	}

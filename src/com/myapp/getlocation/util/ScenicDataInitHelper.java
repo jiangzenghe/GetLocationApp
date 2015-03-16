@@ -49,6 +49,7 @@ public class ScenicDataInitHelper {
 	private SharedPreferences.Editor editor;
 	private ProgressDialog progressDialog;
 	private Handler handler;
+	private Handler handlerSpotLine;
 	
 	public ScenicDataInitHelper(MainActivity context) {
 		this.context = context;
@@ -76,7 +77,7 @@ public class ScenicDataInitHelper {
 			e.printStackTrace();
 		}
 		listScenicPoints.clear();
-		if (daoModel != null) {
+		if (daoSpot != null) {
 			CloseableIterator<ScenicSpotModel> iterator = daoSpot.iterator();
 			
 			while (iterator.hasNext()) {
@@ -88,8 +89,21 @@ public class ScenicDataInitHelper {
 		}
 	}
 	
-	public void initSpotAndLine(String scenicId) {
-		
+	public void initSpotAndLine(final String scenicId) {
+		handlerSpotLine = new MyScenicSpotLineHandler(scenicId);
+		new Thread() {
+            @Override
+            public void run() {
+            	HttpUtil httpUtil = new HttpUtil();
+    			int result = httpUtil.downFile(Constants.API_SINGLE_SCENIC_DOWNLOAD + scenicId, Constants.SCENIC_ROUTER_FILE_PATH, 
+    					Constants.SCENIC + scenicId + Constants.ALL_SCENIC_ZIP);
+                Message message = new Message();
+                Bundle bundle = new Bundle();
+                bundle.putInt(Constants.API_MESSAGE_KEY, result);
+                message.setData(bundle);
+                handlerSpotLine.sendMessage(message);
+            }
+        }.start();
 	}
 	
 	private void searchScenicsData() {
@@ -174,7 +188,9 @@ public class ScenicDataInitHelper {
 	            progressDialog.dismiss();
 	            break;
 	        case 0:
-	            try {
+//	            break;
+	        default:  //1 已经存在
+	        	try {
 	                //根据路径解压缩下载zip文件
 	                ZipUtil.upZipFile(new File(Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH + Constants.SCENIC + Constants.ALL_SCENIC_ZIP), Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH);
 	                //从解压出来的目录中读取json文件的内容
@@ -200,7 +216,7 @@ public class ScenicDataInitHelper {
 	                                boolean isHave=false;
 	                                List<ScenicModel> temp=daoModel.queryForEq("scenicId", scenicModel.getScenicId());
 	                                for(int j=0;j<temp.size();j++){
-	                                	if(temp.get(i).getScenicId().equals(scenicModel.getScenicId()))
+	                                	if(temp.get(j).getScenicId().equals(scenicModel.getScenicId()))
 	                                	{isHave=true;
 	                                	break;}
 	                                }
@@ -225,12 +241,90 @@ public class ScenicDataInitHelper {
 	                    }
 	                }
 	            } catch (Exception e) {
-	                Toast.makeText(context, "数据加载出错", Toast.LENGTH_SHORT).show();
+	                Toast.makeText(context, "数据解压出错", Toast.LENGTH_SHORT).show();
 	                progressDialog.dismiss();
 	            }
+	        }
+		}
+	}
+	
+	private class MyScenicSpotLineHandler extends Handler{
+		public MyScenicSpotLineHandler(String scenicId) {
+			this.scenicId = scenicId;
+		}
+		
+		private String scenicId;
+		
+		@Override
+	    public void handleMessage(Message msg) {
+			super.handleMessage(msg);
+            Bundle bundle = msg.getData();
+            //获取api访问结果，-1为获取失败 0为下载成功；1为本地已经存在
+            int result = bundle.getInt(Constants.API_MESSAGE_KEY);
+			
+	        switch (result) {
+	        case -1:
+	            Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
+	            progressDialog.dismiss();
 	            break;
+	        case 0:
+//	            break;
 	        default:  //1 已经存在
-	        	progressDialog.dismiss();
+	        	try {
+	                //根据路径解压缩下载zip文件
+	                ZipUtil.upZipFile(new File(Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH + 
+	                		Constants.SCENIC + scenicId + Constants.ALL_SCENIC_ZIP), Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH);
+	                //从解压出来的目录中读取json文件的内容
+	                String json = FileUtil.readFile(Constants.SCENIC_SINGLE_FILE_PATH + scenicId +
+	                		"/" + Constants.SCENIC + scenicId + Constants.ALL_SCENIC_JSON);
+	                if (TextUtils.isEmpty(json)) {
+	                    Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
+	                } else {
+	                    //json解析并保存的手机的SQLite 数据库
+	                    try {
+	                        JSONTokener jsonParser = new JSONTokener(json);
+	                        JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
+	                        JSONArray jsonArray = jsonObject.getJSONArray("scenicMap");
+	                        for (int i = 0; i < jsonArray.length(); i++) {
+	                        	String scenicMapId = jsonArray.getJSONObject(i).getString("id");
+	                            if (!TextUtils.isEmpty(scenicMapId)) {
+	                            	 ScenicSpotModel scenicMapModel = new ScenicSpotModel();
+                                     scenicMapModel.setSpotId(scenicMapId);
+                                     scenicMapModel.setScenicId(jsonArray.getJSONObject(i).getString("scenicId"));
+                                     scenicMapModel.setScenicspotName(jsonArray.getJSONObject(i).getString("scenicspotName"));
+                                     scenicMapModel.setAbsoluteLongitude(jsonArray.getJSONObject(i).getDouble("absoluteLongitude"));
+                                     scenicMapModel.setAbsoluteLatitude(jsonArray.getJSONObject(i).getDouble("absoluteLatitude"));
+	                                
+	                                boolean isHave=false;
+	                                List<ScenicSpotModel> temp=daoSpot.queryForEq("spotId", scenicMapModel.getSpotId());
+	                                for(int j=0;j<temp.size();j++){
+	                                	if(temp.get(i).getSpotId().equals(scenicMapModel.getSpotId()))
+	                                	{isHave=true;
+	                                	break;}
+	                                }
+	                                if(!isHave){
+	                                	daoSpot.create(scenicMapModel);
+	                                }
+	                                else{//已经存在   
+	                                	
+	                                }
+	                            }
+	                        }
+	                        Toast.makeText(context, "spot数据加载成功", Toast.LENGTH_SHORT).show();
+	                        progressDialog.dismiss();
+	                        
+	                    } catch (Exception ex) {
+	                        ex.printStackTrace();
+	                        Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
+	                        progressDialog.dismiss();
+	                    } finally {
+	                    	
+	                    }
+	                }
+	            } catch (Exception e) {
+	                Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
+	                progressDialog.dismiss();
+	            }
 	        }
 		}
 	}

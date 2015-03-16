@@ -294,13 +294,14 @@ public class MainActivity extends Activity {
 					.longitude(location.getLongitude()).build();
 			mBaiduMap.setMyLocationData(locData);
 			if (isFirstLoc) {
-				isFirstLoc = false;
 				LatLng ll = new LatLng(location.getLatitude(),
 						location.getLongitude());
 				MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
 				mBaiduMap.animateMapStatus(u);
 				
-				if(listScenics.size() > 0) {
+//				Toast.makeText(MainActivity.this, "" + listScenics.size() + ","
+//						+ location.getLatitude(), Toast.LENGTH_SHORT).show();
+ 				if(listScenics.size() > 0) {
 					final String[] items = new String[listScenics.size()];
 					for(ScenicModel each:listScenics) {
 						items[listScenics.indexOf(each)] = each.getScenicName();
@@ -312,11 +313,14 @@ public class MainActivity extends Activity {
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
 							// TODO Auto-generated method stub
+							Toast.makeText(MainActivity.this, which+ "," + listScenics.get(which).getScenicId(), Toast.LENGTH_SHORT).show();
 							dataInitHelper.initSpotAndLine(listScenics.get(which).getScenicId());
 						}
 					})
 					.create();
 					dialogChooseArea.show();
+					//此标志在if进入之后的一开始就赋值为false，但是放在此处保证获取数据之后才置为false
+					isFirstLoc = false;
 				}
 			}
 			if(locByHand) {
