@@ -1,7 +1,5 @@
 package com.myapp.getlocation.entity;
 
-import java.util.ArrayList;
-
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
@@ -20,10 +18,12 @@ public class SpotPointsModel {
 	private String spotId;//经典id
 	@DatabaseField(width=20)
     private String scenicspotName;//场景分景点
-	@DatabaseField(width=5)
-	private String spotType;
 	@DatabaseField()
-    private ArrayList<Points> points;
+    private Double absoluteLongitude;
+	@DatabaseField()
+    private Double absoluteLatitude;
+	@DatabaseField()
+    private Double absoluteAltitude;
 	@DatabaseField(width=20)
 	private boolean isSubmited;
 	public Integer getId() {
@@ -56,23 +56,22 @@ public class SpotPointsModel {
 	public void setScenicspotName(String scenicspotName) {
 		this.scenicspotName = scenicspotName;
 	}
+	public Double getAbsoluteLongitude() {
+		return absoluteLongitude;
+	}
+	public void setAbsoluteLongitude(Double absoluteLongitude) {
+		this.absoluteLongitude = absoluteLongitude;
+	}
+	public Double getAbsoluteLatitude() {
+		return absoluteLatitude;
+	}
+	public void setAbsoluteLatitude(Double absoluteLatitude) {
+		this.absoluteLatitude = absoluteLatitude;
+	}
 	public boolean isSubmited() {
 		return isSubmited;
 	}
 	public void setSubmited(boolean isSubmited) {
 		this.isSubmited = isSubmited;
 	}
-	public String getSpotType() {
-		return spotType;
-	}
-	public void setSpotType(String spotType) {
-		this.spotType = spotType;
-	}
-	public ArrayList<Points> getPoints() {
-		return points;
-	}
-	public void setPoints(ArrayList<Points> points) {
-		this.points = points;
-	}
-	
 }
