@@ -18,6 +18,8 @@ public class ScenicSpotModel {
 	private String spotId;//经典id
 	@DatabaseField(width=20)
     private String scenicspotName;//场景分景点
+	@DatabaseField(width=5)
+	private String spotType;
 	@DatabaseField()
     private Double absoluteLongitude;
 	@DatabaseField()
