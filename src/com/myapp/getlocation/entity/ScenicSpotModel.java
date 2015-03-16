@@ -1,5 +1,7 @@
 package com.myapp.getlocation.entity;
 
+import java.util.ArrayList;
+
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
@@ -18,6 +20,8 @@ public class ScenicSpotModel {
 	private String spotId;//经典id
 	@DatabaseField(width=20)
     private String scenicspotName;//场景分景点
+	@DatabaseField(width=2)
+    private String spotType;//
 	@DatabaseField()
     private Double absoluteLongitude;
 	@DatabaseField()
@@ -56,6 +60,18 @@ public class ScenicSpotModel {
 	public void setScenicspotName(String scenicspotName) {
 		this.scenicspotName = scenicspotName;
 	}
+	public boolean isSubmited() {
+		return isSubmited;
+	}
+	public void setSubmited(boolean isSubmited) {
+		this.isSubmited = isSubmited;
+	}
+	public String getSpotType() {
+		return spotType;
+	}
+	public void setSpotType(String spotType) {
+		this.spotType = spotType;
+	}
 	public Double getAbsoluteLongitude() {
 		return absoluteLongitude;
 	}
@@ -68,10 +84,11 @@ public class ScenicSpotModel {
 	public void setAbsoluteLatitude(Double absoluteLatitude) {
 		this.absoluteLatitude = absoluteLatitude;
 	}
-	public boolean isSubmited() {
-		return isSubmited;
+	public Double getAbsoluteAltitude() {
+		return absoluteAltitude;
 	}
-	public void setSubmited(boolean isSubmited) {
-		this.isSubmited = isSubmited;
+	public void setAbsoluteAltitude(Double absoluteAltitude) {
+		this.absoluteAltitude = absoluteAltitude;
 	}
+	
 }
