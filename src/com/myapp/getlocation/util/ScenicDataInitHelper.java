@@ -30,6 +30,7 @@ import com.myapp.getlocation.entity.ScenicLineModel;
 import com.myapp.getlocation.entity.ScenicLineSectionModel;
 import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
+import com.myapp.getlocation.entity.SpotPointsModel;
 
 /**
  * @author Jiang
@@ -42,6 +43,7 @@ public class ScenicDataInitHelper {
 	private Dao<ScenicSpotModel, Integer> daoSpot;
 	private Dao<ScenicLineSectionModel, Integer> daoSection;
 	private Dao<ScenicLineModel, Integer> daoLine;
+	private Dao<SpotPointsModel, Integer> daoSpotPoints;
 	private ArrayList<ScenicSpotModel> listScenicPoints;
 	private ArrayList<ScenicModel> listScenics;
 	
@@ -60,8 +62,9 @@ public class ScenicDataInitHelper {
 		handler = new MyScenicHandler();
 		requestDataFromInternet();
 		
-		context.setDao(daoSpot);
 		context.setDaoScenics(daoModel);
+		context.setDaoSpot(daoSpot);
+		context.setDaoPoints(daoSpotPoints);
 		context.setListScenicPoints(listScenicPoints);
 		context.setListScenics(listScenics);
 		
@@ -71,22 +74,13 @@ public class ScenicDataInitHelper {
 		try {
 			daoModel = context.getEntityHelper().getDao(ScenicModel.class);
 			daoSpot = context.getEntityHelper().getDao(ScenicSpotModel.class);
-			daoSection = context.getEntityHelper().getDao(ScenicLineSectionModel.class);
 			daoLine = context.getEntityHelper().getDao(ScenicLineModel.class);
+			daoSection = context.getEntityHelper().getDao(ScenicLineSectionModel.class);
+			daoSpotPoints = context.getEntityHelper().getDao(SpotPointsModel.class);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		listScenicPoints.clear();
-		if (daoSpot != null) {
-			CloseableIterator<ScenicSpotModel> iterator = daoSpot.iterator();
-			
-			while (iterator.hasNext()) {
-				ScenicSpotModel entity = iterator.next();
-
-				listScenicPoints.add(entity);
-
-			}
-		}
+		
 	}
 	
 	public void initSpotAndLine(final String scenicId) {
@@ -107,6 +101,7 @@ public class ScenicDataInitHelper {
 	}
 	
 	private void searchScenicsData() {
+		listScenics.clear();
 		if (daoModel != null) {
 			CloseableIterator<ScenicModel> iterator = daoModel.iterator();
 			
@@ -114,6 +109,19 @@ public class ScenicDataInitHelper {
 				ScenicModel entity = iterator.next();
 
 				listScenics.add(entity);
+			}
+		}
+	}
+	private void searchSpotsData() {
+		listScenicPoints.clear();
+		if (daoSpot != null) {
+			CloseableIterator<ScenicSpotModel> iterator = daoSpot.iterator();
+			
+			while (iterator.hasNext()) {
+				ScenicSpotModel entity = iterator.next();
+
+				listScenicPoints.add(entity);
+
 			}
 		}
 	}
@@ -135,6 +143,8 @@ public class ScenicDataInitHelper {
             editor.apply();
             //获取所有景区基本资料
             downAndParseData();
+//        } else {
+        	
 //        }
 	}
 	
@@ -143,7 +153,8 @@ public class ScenicDataInitHelper {
             @Override
             public void run() {
             	HttpUtil httpUtil = new HttpUtil();
-    			int result = httpUtil.downFile(Constants.API_ALL_SCENIC_DOWNLOAD, Constants.SCENIC_ROUTER_FILE_PATH, Constants.SCENIC + Constants.ALL_SCENIC_ZIP);
+    			int result = httpUtil.downFile(Constants.API_ALL_SCENIC_DOWNLOAD, Constants.SCENIC_ROUTER_FILE_PATH, 
+    					Constants.SCENIC + Constants.ALL_SCENIC_ZIP);
                 Message message = new Message();
                 Bundle bundle = new Bundle();
                 bundle.putInt(Constants.API_MESSAGE_KEY, result);
@@ -192,7 +203,9 @@ public class ScenicDataInitHelper {
 	        default:  //1 已经存在
 	        	try {
 	                //根据路径解压缩下载zip文件
-	                ZipUtil.upZipFile(new File(Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH + Constants.SCENIC + Constants.ALL_SCENIC_ZIP), Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH);
+	                ZipUtil.upZipFile(new File(Environment.getExternalStorageDirectory() + "/" + 
+	                	Constants.SCENIC_ROUTER_FILE_PATH + Constants.SCENIC + Constants.ALL_SCENIC_ZIP), 
+	                		Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH);
 	                //从解压出来的目录中读取json文件的内容
 	                String json = FileUtil.readFile(Constants.SCENIC_IMAGE_FILE_PATH + Constants.SCENIC + Constants.ALL_SCENIC_JSON);
 	                if (TextUtils.isEmpty(json)) {
@@ -272,8 +285,9 @@ public class ScenicDataInitHelper {
 	        default:  //1 已经存在
 	        	try {
 	                //根据路径解压缩下载zip文件
-	                ZipUtil.upZipFile(new File(Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH + 
-	                		Constants.SCENIC + scenicId + Constants.ALL_SCENIC_ZIP), Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH);
+	                ZipUtil.upZipFile(new File(Environment.getExternalStorageDirectory() + "/" + 
+	                	Constants.SCENIC_ROUTER_FILE_PATH + Constants.SCENIC + scenicId + Constants.ALL_SCENIC_ZIP), 
+	                		Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH);
 	                //从解压出来的目录中读取json文件的内容
 	                String json = FileUtil.readFile(Constants.SCENIC_SINGLE_FILE_PATH + scenicId +
 	                		"/" + Constants.SCENIC + scenicId + Constants.ALL_SCENIC_JSON);
@@ -298,7 +312,7 @@ public class ScenicDataInitHelper {
 	                                boolean isHave=false;
 	                                List<ScenicSpotModel> temp=daoSpot.queryForEq("spotId", scenicMapModel.getSpotId());
 	                                for(int j=0;j<temp.size();j++){
-	                                	if(temp.get(i).getSpotId().equals(scenicMapModel.getSpotId()))
+	                                	if(temp.get(j).getSpotId().equals(scenicMapModel.getSpotId()))
 	                                	{isHave=true;
 	                                	break;}
 	                                }
@@ -311,6 +325,7 @@ public class ScenicDataInitHelper {
 	                            }
 	                        }
 	                        Toast.makeText(context, "spot数据加载成功", Toast.LENGTH_SHORT).show();
+	                        searchSpotsData();
 	                        progressDialog.dismiss();
 	                        
 	                    } catch (Exception ex) {

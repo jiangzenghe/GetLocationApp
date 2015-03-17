@@ -32,7 +32,7 @@ import com.myapp.getlocation.entity.ScenicSpotModel;
  *         </p>
  *         <p>
  */
-public class SceneSectionPointView extends LinearLayout {
+public class ScenicSectionPointView extends LinearLayout {
 	private Context context;
 	private LayoutInflater mInflate;
 	private View layout;
@@ -41,7 +41,7 @@ public class SceneSectionPointView extends LinearLayout {
 	private ArrayList<ScenicSpotModel> scenicPoints;
 	private ListView list = null;
 	
-	public SceneSectionPointView(Context context, ArrayList<ScenicSpotModel> scenicPoints) {
+	public ScenicSectionPointView(Context context, ArrayList<ScenicSpotModel> scenicPoints) {
 		super(context);
 		this.context = context;
 		this.scenicPoints = scenicPoints;
@@ -101,7 +101,6 @@ class SectionViewAdapter extends ArrayAdapter<ScenicSpotModel> {
 			binder.attachToView(context, view, bean);
 			txtViewId.setText(bean.getScenicId());
 			txtViewName.setText(bean.getScenicspotName());
-			ckbSubmit.setChecked(bean.isSubmited());
 			
 		} catch (Exception e) {
 			Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();

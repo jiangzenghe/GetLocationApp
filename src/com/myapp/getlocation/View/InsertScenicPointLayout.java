@@ -21,8 +21,10 @@ import com.baidu.mapapi.model.LatLng;
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.R;
+import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
+import com.myapp.getlocation.entity.SpotPointsModel;
 
 public class InsertScenicPointLayout extends LinearLayout {
 
@@ -31,12 +33,15 @@ public class InsertScenicPointLayout extends LinearLayout {
 	private LayoutInflater mInflate;
 	private TextView latitudeTxt;
 	private TextView longitudeTxt;
+	private TextView altitudeTxt;
+	private TextView spotTypeTxt;
 	private TextView scenicSpotTxt;
 	private TextView scenicSpotIdTxt;
 	private BaiduMap mBaiduMap;
 	
 	private Dao<ScenicSpotModel, Integer> dao;
 	private Dao<ScenicModel, Integer> daoScenics;
+	private Dao<SpotPointsModel, Integer> daoPoints;
 	private ArrayList<ScenicModel> listScenics;
 	private ArrayList<ScenicSpotModel> listScenicPoints;
 	private LatLng latLng;
@@ -56,8 +61,10 @@ public class InsertScenicPointLayout extends LinearLayout {
         
         latitudeTxt = (TextView) this.findViewById(R.id.latitude);
         longitudeTxt = (TextView) this.findViewById(R.id.longitude);
-        scenicSpotTxt = (TextView) this.findViewById(R.id.scenic_point_name);
-        scenicSpotIdTxt = (TextView) this.findViewById(R.id.scenic_name);
+        altitudeTxt = (TextView) this.findViewById(R.id.altitude);
+        spotTypeTxt = (TextView) this.findViewById(R.id.spot_type);
+        scenicSpotTxt = (TextView) this.findViewById(R.id.spot_point_name);
+        scenicSpotIdTxt = (TextView) this.findViewById(R.id.spot_name);
         Button cancelBtn = (Button) this.findViewById(R.id.button_cancel);
         Button okBtn = (Button) this.findViewById(R.id.button_ok);
         listScenics = new ArrayList<ScenicModel>();
@@ -125,35 +132,42 @@ public class InsertScenicPointLayout extends LinearLayout {
 	}
 	
 	private void insertData() {
-		if(dao == null) {
+		if(daoPoints == null) {
 			return;
 		}
-		ScenicSpotModel entity = new ScenicSpotModel();
+		SpotPointsModel entity = new SpotPointsModel();
+		double longitude = Double.parseDouble(longitudeTxt.getText().toString().equals("")?"0":longitudeTxt.getText().toString());
+		double latitude = Double.parseDouble(latitudeTxt.getText().toString().equals("")?"0":latitudeTxt.getText().toString());
+		double altitude = Double.parseDouble(altitudeTxt.getText().toString().equals("")?"0":altitudeTxt.getText().toString());
+		Points point = new Points(longitude, latitude, altitude);
 		
-//		entity.setScenicId("221");//test
-//		entity.setSpotId("10001");//test
-//		entity.setScenicspotName("南山牌坊");
-		entity.setScenicId(scenicSpotIdTxt.getText().toString());
+		entity.setSpotId(scenicSpotIdTxt.getText().toString());
 		entity.setScenicspotName(scenicSpotTxt.getText().toString());
-		entity.setAbsoluteLatitude(Double.parseDouble(latitudeTxt.getText().toString()));
-		entity.setAbsoluteLongitude(Double.parseDouble(longitudeTxt.getText().toString()));
+		entity.setPointsNum(1);
+			
+		ArrayList<Points> points = new ArrayList<Points>();
+		points.add(point);
+		entity.setSpotPoints(points);
 		entity.setSubmited(false);
 		try {
 			boolean isHave=false;
-			List<ScenicSpotModel> tempModel=dao.queryForEq("scenicId", entity.getScenicId());
+			List<SpotPointsModel> tempModel=daoPoints.queryForEq("spotId", entity.getSpotId());
 			for(int i=0;i<tempModel.size();i++){
 				if(tempModel.get(i).getSpotId().equals(entity.getSpotId()))
 				{isHave=true;
+				tempModel.get(i).getSpotPoints().add(point);
+				tempModel.get(i).setPointsNum(tempModel.get(i).getPointsNum() + 1);
+				daoPoints.createOrUpdate(tempModel.get(i));
 				break;}
 			}
 			if(!isHave){
-				dao.create(entity);
-				listScenicPoints.add(entity);
+				daoPoints.create(entity);
 				Toast.makeText(context, "添加成功", Toast.LENGTH_SHORT).show();
 				mBaiduMap.hideInfoWindow();
 			}
 			else{
-				Toast.makeText(context, "已有该本地数据",Toast.LENGTH_SHORT).show();
+				Toast.makeText(context, "已有该本地数据,修改成功",Toast.LENGTH_SHORT).show();
+				mBaiduMap.hideInfoWindow();
 			}
 			
 
@@ -165,15 +179,16 @@ public class InsertScenicPointLayout extends LinearLayout {
 	
 	//may be deprecated
 	private void searchData() {
-		if (daoScenics != null) {
-			CloseableIterator<ScenicModel> iterator = daoScenics.iterator();
-			
-			while (iterator.hasNext()) {
-				ScenicModel entity = iterator.next();
-
-				listScenics.add(entity);
-			}
-		}
+//		if (daoScenics != null) {
+//			CloseableIterator<ScenicModel> iterator = daoScenics.iterator();
+//			
+//			while (iterator.hasNext()) {
+//				ScenicModel entity = iterator.next();
+//
+//				listScenics.add(entity);
+//			}
+//		}
+		listScenicPoints.clear();
 		if (dao != null) {
 			CloseableIterator<ScenicSpotModel> iterator = dao.iterator();
 			
@@ -225,6 +240,14 @@ public class InsertScenicPointLayout extends LinearLayout {
 
 	public void setDaoScenics(Dao<ScenicModel, Integer> daoScenics) {
 		this.daoScenics = daoScenics;
+	}
+
+	public Dao<SpotPointsModel, Integer> getDaoPoints() {
+		return daoPoints;
+	}
+
+	public void setDaoPoints(Dao<SpotPointsModel, Integer> daoPoints) {
+		this.daoPoints = daoPoints;
 	}
 
 	public ArrayList<ScenicSpotModel> getListScenicPoints() {

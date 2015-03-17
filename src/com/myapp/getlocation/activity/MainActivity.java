@@ -8,6 +8,7 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
@@ -27,19 +28,22 @@ import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
+import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.capricorn.ArcMenu;
 import com.capricorn.RayMenu;
+import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.View.InsertScenicPointLayout;
-import com.myapp.getlocation.View.ScenePointListView;
+import com.myapp.getlocation.View.ScenicPointListView;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.db.EntityHelper;
 import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
+import com.myapp.getlocation.entity.SpotPointsModel;
 import com.myapp.getlocation.util.ScenicDataInitHelper;
 
 public class MainActivity extends Activity {
@@ -65,8 +69,9 @@ public class MainActivity extends Activity {
 	private LocationClient mLocClient;
 	private MyLocationListenner myListener = new MyLocationListenner();
 	
-	private Dao<ScenicSpotModel, Integer> dao;
+	private Dao<ScenicSpotModel, Integer> daoSpot;
 	private Dao<ScenicModel, Integer> daoScenics;
+	private Dao<SpotPointsModel, Integer> daoPoints;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -106,7 +111,10 @@ public class MainActivity extends Activity {
 		mMapView = (MapView) findViewById(R.id.bmapView);
 		mBaiduMap = mMapView.getMap();
 		//
-		mBaiduMap.setMyLocationEnabled(true);
+		mBaiduMap.setMyLocationEnabled(false);
+//		mBaiduMap
+//		.setMyLocationConfigeration(new MyLocationConfiguration(
+//				mCurrentMode, true, null));
 		//
 		mLocClient = new LocationClient(this);
 		mLocClient.registerLocationListener(myListener);
@@ -136,9 +144,10 @@ public class MainActivity extends Activity {
 				LatLng ll = marker.getPosition();
 				layout.setLatLng(ll);
 				layout.setmBaiduMap(mBaiduMap);
-				if(daoScenics != null) {
-					layout.setDaoScenics(daoScenics);
-					layout.setDao(dao);
+				if(daoSpot != null && daoPoints != null) {
+//					layout.setDaoScenics(daoScenics);
+					layout.setDao(daoSpot);
+					layout.setDaoPoints(daoPoints);
 				}
 				layout.setListScenicPoints(listScenicPoints);
 				mInfoWindow = new InfoWindow(layout, ll, 0);
@@ -207,9 +216,20 @@ public class MainActivity extends Activity {
 			}).create();
 			alertDialog.show();
 		} else if(position ==1) {
-			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
+			final ArrayList<SpotPointsModel> listSpotPoints = new ArrayList<SpotPointsModel>();
+			if(daoPoints != null) {
+				CloseableIterator<SpotPointsModel> iterator = daoPoints.iterator();
+				
+				while (iterator.hasNext()) {
+					SpotPointsModel entity = iterator.next();
+					listSpotPoints.add(entity);
+				}
+				
+			}
+			ScenicPointListView scenicPointsView = new ScenicPointListView(MainActivity.this, mBaiduMap, listSpotPoints);
+			final Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
 			.setTitle("已采集点数据库列表提交")
-			.setView(new ScenePointListView(MainActivity.this, listScenicPoints))
+			.setView(scenicPointsView)
 			.setPositiveButton("提交", new DialogInterface.OnClickListener() {
 				
 				@Override
@@ -222,6 +242,7 @@ public class MainActivity extends Activity {
 				public void onClick(DialogInterface dialog, int which) {
 				}
 			}).create();
+			scenicPointsView.setAlertDialog(alertDialog);
 			alertDialog.show();
 		} else if(position ==2) {
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
@@ -313,7 +334,7 @@ public class MainActivity extends Activity {
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
 							// TODO Auto-generated method stub
-							Toast.makeText(MainActivity.this, which+ "," + listScenics.get(which).getScenicId(), Toast.LENGTH_SHORT).show();
+//							Toast.makeText(MainActivity.this, which+ "," + listScenics.get(which).getScenicId(), Toast.LENGTH_SHORT).show();
 							dataInitHelper.initSpotAndLine(listScenics.get(which).getScenicId());
 						}
 					})
@@ -339,16 +360,24 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	public Dao<ScenicSpotModel, Integer> getDao() {
-		return dao;
+	public Dao<ScenicSpotModel, Integer> getDaoSpot() {
+		return daoSpot;
 	}
 
-	public void setDao(Dao<ScenicSpotModel, Integer> dao) {
-		this.dao = dao;
+	public void setDaoSpot(Dao<ScenicSpotModel, Integer> daoSpot) {
+		this.daoSpot = daoSpot;
 	}
 
 	public Dao<ScenicModel, Integer> getDaoScenics() {
 		return daoScenics;
+	}
+
+	public Dao<SpotPointsModel, Integer> getDaoPoints() {
+		return daoPoints;
+	}
+
+	public void setDaoPoints(Dao<SpotPointsModel, Integer> daoPoints) {
+		this.daoPoints = daoPoints;
 	}
 
 	public void setDaoScenics(Dao<ScenicModel, Integer> daoScenics) {
@@ -369,6 +398,22 @@ public class MainActivity extends Activity {
 
 	public void setListScenics(ArrayList<ScenicModel> listScenics) {
 		this.listScenics = listScenics;
+	}
+
+	public MapView getmMapView() {
+		return mMapView;
+	}
+
+	public void setmMapView(MapView mMapView) {
+		this.mMapView = mMapView;
+	}
+
+	public BaiduMap getmBaiduMap() {
+		return mBaiduMap;
+	}
+
+	public void setmBaiduMap(BaiduMap mBaiduMap) {
+		this.mBaiduMap = mBaiduMap;
 	}
 
 }

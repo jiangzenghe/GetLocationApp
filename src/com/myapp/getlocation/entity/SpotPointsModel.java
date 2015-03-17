@@ -2,13 +2,14 @@ package com.myapp.getlocation.entity;
 
 import java.util.ArrayList;
 
+import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
 /**
  * 
  */
-@DatabaseTable(tableName="SCENIC_SPOT")
+@DatabaseTable(tableName="SCENIC_SPOT_POINTS")
 public class SpotPointsModel {
 	@DatabaseField(generatedId=true)
 	private Integer id;
@@ -17,13 +18,15 @@ public class SpotPointsModel {
 	@DatabaseField(width=20)
     private String scenicId;//场景id
 	@DatabaseField(width=20)
-	private String spotId;//经典id
+	private String spotId;//景点id
 	@DatabaseField(width=20)
     private String scenicspotName;//场景分景点
 	@DatabaseField(width=2)
     private String spotType;//
-	@DatabaseField()
+	@DatabaseField(dataType= DataType.SERIALIZABLE)
 	private ArrayList<Points> spotPoints;
+	@DatabaseField(width=3)
+	private int pointsNum;
 	@DatabaseField(width=20)
 	private boolean isSubmited;
 	public Integer getId() {
@@ -73,6 +76,12 @@ public class SpotPointsModel {
 	}
 	public void setSpotPoints(ArrayList<Points> spotPoints) {
 		this.spotPoints = spotPoints;
+	}
+	public int getPointsNum() {
+		return pointsNum;
+	}
+	public void setPointsNum(int pointsNum) {
+		this.pointsNum = pointsNum;
 	}
 	
 }
