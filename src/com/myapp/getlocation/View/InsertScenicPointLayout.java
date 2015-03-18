@@ -77,6 +77,7 @@ public class InsertScenicPointLayout extends LinearLayout {
 				// TODO Auto-generated method stub
 //				Toast.makeText(context, "sure", Toast.LENGTH_SHORT).show();
 				insertData();
+				mBaiduMap.clear();
 				
 			}
 		});

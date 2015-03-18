@@ -8,7 +8,6 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
@@ -28,7 +27,6 @@ import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
-import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
@@ -39,10 +37,12 @@ import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.View.InsertScenicPointLayout;
 import com.myapp.getlocation.View.ScenicPointListView;
+import com.myapp.getlocation.View.ScenicSectionPointView;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.db.EntityHelper;
 import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
+import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
 import com.myapp.getlocation.util.ScenicDataInitHelper;
 
@@ -72,6 +72,7 @@ public class MainActivity extends Activity {
 	private Dao<ScenicSpotModel, Integer> daoSpot;
 	private Dao<ScenicModel, Integer> daoScenics;
 	private Dao<SpotPointsModel, Integer> daoPoints;
+	private Dao<SectionPointsModel, Integer> daoSectionPoints;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -131,6 +132,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				locByHand = true;
+				mBaiduMap.clear();
 				mLocClient.requestLocation();
 				
 			}
@@ -192,7 +194,7 @@ public class MainActivity extends Activity {
 			String[] items = {"1-秦皇宫至明城陵","2-明城陵至三仙观"};
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
 			.setTitle("收集路段内含点列表")
-			.setMessage("开始收集某路段的构成点")
+			.setMessage("开始采集某路段的构成点")
 			.setItems(items, new DialogInterface.OnClickListener() {
 				
 				@Override
@@ -245,8 +247,20 @@ public class MainActivity extends Activity {
 			scenicPointsView.setAlertDialog(alertDialog);
 			alertDialog.show();
 		} else if(position ==2) {
+			final ArrayList<SectionPointsModel> listSectionPoints = new ArrayList<SectionPointsModel>();
+			if(daoSectionPoints != null) {
+				CloseableIterator<SectionPointsModel> iterator = daoSectionPoints.iterator();
+				
+				while (iterator.hasNext()) {
+					SectionPointsModel entity = iterator.next();
+					listSectionPoints.add(entity);
+				}
+				
+			}
+			ScenicSectionPointView sectionPointsView = new ScenicSectionPointView(MainActivity.this, mBaiduMap, listSectionPoints);
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
-			.setTitle("路段内点数据提交")
+			.setTitle("已采集路段内点数据提交")
+			.setView(sectionPointsView)
 			.setPositiveButton("确认", new DialogInterface.OnClickListener() {
 				
 				@Override
@@ -259,6 +273,7 @@ public class MainActivity extends Activity {
 				public void onClick(DialogInterface dialog, int which) {
 				}
 			}).create();
+			sectionPointsView.setAlertDialog(alertDialog);
 			alertDialog.show();
 		}
 	}
@@ -382,6 +397,15 @@ public class MainActivity extends Activity {
 
 	public void setDaoScenics(Dao<ScenicModel, Integer> daoScenics) {
 		this.daoScenics = daoScenics;
+	}
+
+	public Dao<SectionPointsModel, Integer> getDaoSectionPoints() {
+		return daoSectionPoints;
+	}
+
+	public void setDaoSectionPoints(
+			Dao<SectionPointsModel, Integer> daoSectionPoints) {
+		this.daoSectionPoints = daoSectionPoints;
 	}
 
 	public ArrayList<ScenicSpotModel> getListScenicPoints() {

@@ -30,6 +30,7 @@ import com.myapp.getlocation.entity.ScenicLineModel;
 import com.myapp.getlocation.entity.ScenicLineSectionModel;
 import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
+import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
 
 /**
@@ -44,6 +45,7 @@ public class ScenicDataInitHelper {
 	private Dao<ScenicLineSectionModel, Integer> daoSection;
 	private Dao<ScenicLineModel, Integer> daoLine;
 	private Dao<SpotPointsModel, Integer> daoSpotPoints;
+	private Dao<SectionPointsModel, Integer> daoSectionPoints;
 	private ArrayList<ScenicSpotModel> listScenicPoints;
 	private ArrayList<ScenicModel> listScenics;
 	
@@ -65,6 +67,7 @@ public class ScenicDataInitHelper {
 		context.setDaoScenics(daoModel);
 		context.setDaoSpot(daoSpot);
 		context.setDaoPoints(daoSpotPoints);
+		context.setDaoSectionPoints(daoSectionPoints);
 		context.setListScenicPoints(listScenicPoints);
 		context.setListScenics(listScenics);
 		
@@ -77,6 +80,7 @@ public class ScenicDataInitHelper {
 			daoLine = context.getEntityHelper().getDao(ScenicLineModel.class);
 			daoSection = context.getEntityHelper().getDao(ScenicLineSectionModel.class);
 			daoSpotPoints = context.getEntityHelper().getDao(SpotPointsModel.class);
+			daoSectionPoints = context.getEntityHelper().getDao(SectionPointsModel.class);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -277,7 +281,7 @@ public class ScenicDataInitHelper {
 			
 	        switch (result) {
 	        case -1:
-	            Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
+	            Toast.makeText(context, "spot和line数据加载出错", Toast.LENGTH_SHORT).show();
 	            progressDialog.dismiss();
 	            break;
 	        case 0:
@@ -292,55 +296,135 @@ public class ScenicDataInitHelper {
 	                String json = FileUtil.readFile(Constants.SCENIC_SINGLE_FILE_PATH + scenicId +
 	                		"/" + Constants.SCENIC + scenicId + Constants.ALL_SCENIC_JSON);
 	                if (TextUtils.isEmpty(json)) {
-	                    Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
+	                    Toast.makeText(context, "spot和line数据加载出错", Toast.LENGTH_SHORT).show();
 	                } else {
 	                    //json解析并保存的手机的SQLite 数据库
-	                    try {
-	                        JSONTokener jsonParser = new JSONTokener(json);
-	                        JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
-	                        JSONArray jsonArray = jsonObject.getJSONArray("scenicMap");
-	                        for (int i = 0; i < jsonArray.length(); i++) {
-	                        	String scenicMapId = jsonArray.getJSONObject(i).getString("id");
-	                            if (!TextUtils.isEmpty(scenicMapId)) {
-	                            	 ScenicSpotModel scenicMapModel = new ScenicSpotModel();
-                                     scenicMapModel.setSpotId(scenicMapId);
-                                     scenicMapModel.setScenicId(jsonArray.getJSONObject(i).getString("scenicId"));
-                                     scenicMapModel.setScenicspotName(jsonArray.getJSONObject(i).getString("scenicspotName"));
-                                     scenicMapModel.setAbsoluteLongitude(jsonArray.getJSONObject(i).getDouble("absoluteLongitude"));
-                                     scenicMapModel.setAbsoluteLatitude(jsonArray.getJSONObject(i).getDouble("absoluteLatitude"));
-	                                
-	                                boolean isHave=false;
-	                                List<ScenicSpotModel> temp=daoSpot.queryForEq("spotId", scenicMapModel.getSpotId());
-	                                for(int j=0;j<temp.size();j++){
-	                                	if(temp.get(j).getSpotId().equals(scenicMapModel.getSpotId()))
-	                                	{isHave=true;
-	                                	break;}
-	                                }
-	                                if(!isHave){
-	                                	daoSpot.create(scenicMapModel);
-	                                }
-	                                else{//已经存在   
-	                                	
-	                                }
-	                            }
-	                        }
-	                        Toast.makeText(context, "spot数据加载成功", Toast.LENGTH_SHORT).show();
-	                        searchSpotsData();
-	                        progressDialog.dismiss();
-	                        
-	                    } catch (Exception ex) {
-	                        ex.printStackTrace();
-	                        Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
-	                        progressDialog.dismiss();
-	                    } finally {
-	                    	
-	                    }
+                        dealSpotData(json);
+                        dealLineData(json);
 	                }
 	            } catch (Exception e) {
-	                Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
+	                Toast.makeText(context, "spot和line数据加载出错", Toast.LENGTH_SHORT).show();
 	                progressDialog.dismiss();
 	            }
 	        }
+		}
+		
+		private void dealSpotData(String json) {
+			try {
+                JSONTokener jsonParser = new JSONTokener(json);
+                JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
+                JSONArray jsonArray = jsonObject.getJSONArray("scenicMap");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                	String scenicMapId = jsonArray.getJSONObject(i).getString("id");
+                    if (!TextUtils.isEmpty(scenicMapId)) {
+                    	 ScenicSpotModel scenicMapModel = new ScenicSpotModel();
+                         scenicMapModel.setSpotId(scenicMapId);
+                         scenicMapModel.setScenicId(jsonArray.getJSONObject(i).getString("scenicId"));
+                         scenicMapModel.setScenicspotName(jsonArray.getJSONObject(i).getString("scenicspotName"));
+                         scenicMapModel.setAbsoluteLongitude(jsonArray.getJSONObject(i).getDouble("absoluteLongitude"));
+                         scenicMapModel.setAbsoluteLatitude(jsonArray.getJSONObject(i).getDouble("absoluteLatitude"));
+                        
+                        boolean isHave=false;
+                        List<ScenicSpotModel> temp=daoSpot.queryForEq("spotId", scenicMapModel.getSpotId());
+                        for(int j=0;j<temp.size();j++){
+                        	if(temp.get(j).getSpotId().equals(scenicMapModel.getSpotId()))
+                        	{isHave=true;
+                        	break;}
+                        }
+                        if(!isHave){
+                        	daoSpot.create(scenicMapModel);
+                        }
+                        else{//已经存在   
+                        	
+                        }
+                    }
+                }
+                
+                Toast.makeText(context, "spot和line数据加载成功", Toast.LENGTH_SHORT).show();
+                searchSpotsData();
+                progressDialog.dismiss();
+                
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Toast.makeText(context, "spot和linet数据加载出错", Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
+            } finally {
+            	
+            }
+			
+		}
+		
+		private void dealLineData(String json) {
+			try {
+                JSONTokener jsonParser = new JSONTokener(json);
+                JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
+                JSONArray jsonArray = jsonObject.getJSONArray("scenicRecommendLine");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONArray jsonArrayL = jsonArray.getJSONArray(i);
+                    for (int j = 0; j < jsonArrayL.length(); j++) {
+                        if (j == 0) {  //路线
+                            String scenicRecommendLineId = jsonArrayL.getJSONObject(j).getString("id");
+                            if (!TextUtils.isEmpty(scenicRecommendLineId)) {
+                                ScenicLineModel scenicRecommendLineModel = new ScenicLineModel();
+                                scenicRecommendLineModel.setScenicId(jsonArrayL.getJSONObject(j).getString("scenicId"));
+                                scenicRecommendLineModel.setScenicLineId(scenicRecommendLineId);
+                                scenicRecommendLineModel.setScenicLinename(jsonArrayL.getJSONObject(j).getString("recommendRoutename"));
+                                
+                                boolean isHave=false;
+                                List<ScenicLineModel> temp=daoLine.queryForEq("scenicLineId", scenicRecommendLineModel.getScenicLineId());
+                                for(int k=0;k<temp.size();k++){
+                                	if(temp.get(k).getScenicLineId().equals(scenicRecommendLineModel.getScenicLineId()))
+                                	{isHave=true;
+                                	break;}
+                                }
+                                if(!isHave){
+                                	daoLine.create(scenicRecommendLineModel);
+                                }
+                                else{//已经存在   
+                                	
+                                }
+                            }
+                        } else {  //路线中的路段
+                            String recommendLinesectionId = jsonArrayL.getJSONObject(j).getString("id");
+                            if (!TextUtils.isEmpty(recommendLinesectionId)) {
+                            	ScenicLineSectionModel recommendLinesectionModel = new ScenicLineSectionModel();
+                                recommendLinesectionModel.setLinesectionId(recommendLinesectionId);
+                                recommendLinesectionModel.setScenicId(jsonArrayL.getJSONObject(j).getString("scenicId"));
+                                recommendLinesectionModel.setScenicLineId(jsonArrayL.getJSONObject(j).getString("recommendrouteId"));
+                                recommendLinesectionModel.setRouteOrder(jsonArrayL.getJSONObject(j).getInt("routeOrder"));
+                                recommendLinesectionModel.setAspotId(jsonArrayL.getJSONObject(j).getString("aspotId"));
+                                recommendLinesectionModel.setBspotId(jsonArrayL.getJSONObject(j).getString("bspotId"));
+                                recommendLinesectionModel.setAspotName(jsonArrayL.getJSONObject(j).getString("ascenicspotName"));
+                                recommendLinesectionModel.setBspotName(jsonArrayL.getJSONObject(j).getString("bscenicspotName"));
+                                
+                                boolean isHave=false;
+                                List<ScenicLineSectionModel> temp=daoSection.queryForEq("linesectionId", recommendLinesectionModel.getLinesectionId());
+                                for(int k=0;k<temp.size();k++){
+                                	if(temp.get(k).getLinesectionId().equals(recommendLinesectionModel.getLinesectionId()))
+                                	{isHave=true;
+                                	break;}
+                                }
+                                if(!isHave){
+                                	daoSection.create(recommendLinesectionModel);
+                                }
+                                else{//已经存在   
+                                	
+                                }
+                            }
+                        }
+                    }
+                }
+                Toast.makeText(context, "spot和line数据加载成功", Toast.LENGTH_SHORT).show();
+                searchSpotsData();
+                progressDialog.dismiss();
+                
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Toast.makeText(context, "spot和line数据加载出错", Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
+            } finally {
+            	
+            }
 		}
 	}
 }

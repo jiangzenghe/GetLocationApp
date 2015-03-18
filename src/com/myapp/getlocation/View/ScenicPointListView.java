@@ -1,10 +1,13 @@
 package com.myapp.getlocation.View;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -22,7 +26,9 @@ import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.DotOptions;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
+import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.R;
+import com.myapp.getlocation.activity.MainActivity;
 import com.myapp.getlocation.adapter.ClassAttachmentImpl;
 import com.myapp.getlocation.adapter.IAttachment;
 import com.myapp.getlocation.entity.Points;
@@ -111,6 +117,7 @@ public class ScenicPointListView extends LinearLayout {
 			TextView txtViewtype = (TextView) view.findViewById(R.id.txtScenicPointtype);
 			TextView txtViewNum = (TextView) view.findViewById(R.id.point_num);
 			CheckBox ckbSubmit = (CheckBox) view.findViewById(R.id.checkBox_submit);
+			ImageView delImage = (ImageView) view.findViewById(R.id.delImage);
 			ckbSubmit.setEnabled(false);
 			
 			/*
@@ -135,7 +142,41 @@ public class ScenicPointListView extends LinearLayout {
 							mBaiduMap.addOverlay(polygonOption);
 						}
 						alertDialog.dismiss();
-						return true;//不消耗点击
+						return true;//消耗点击
+					}
+				});
+				delImage.setOnClickListener(new View.OnClickListener() {
+					
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated method stub
+						Dialog alertDelDialog = new AlertDialog.Builder(context)
+						.setTitle("删除确认")
+						.setMessage("确定删除？")
+						.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+							
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								try {
+									MainActivity activity = (MainActivity)context;
+									Dao<SpotPointsModel, Integer> daoSpotPoints = activity.getEntityHelper().getDao(SpotPointsModel.class);
+									if(daoSpotPoints == null) {
+										return;
+									}
+									daoSpotPoints.deleteById(bean.getId());
+									alertDialog.dismiss();
+								} catch (SQLException e) {
+									e.printStackTrace();
+								}
+							}
+						})
+						.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+				
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+							}
+						}).create();
+						alertDelDialog.show();
 					}
 				});
 				txtViewId.setText(bean.getSpotId());

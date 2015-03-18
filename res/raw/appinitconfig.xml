@@ -9,5 +9,6 @@
 		<entity class="com.myapp.getlocation.entity.ScenicLineModel"/>
 		<entity class="com.myapp.getlocation.entity.ScenicLineSectionModel"/>
 		<entity class="com.myapp.getlocation.entity.SpotPointsModel"/>
+		<entity class="com.myapp.getlocation.entity.SectionPointsModel"/>
 	</sqlite-config>
 </app-init-config>
