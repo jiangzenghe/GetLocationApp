@@ -31,6 +31,8 @@ public class SectionPointsModel {
     private String aspotName;
     @DatabaseField(width=20)
     private String bspotName;
+    @DatabaseField(width=20)
+    private String scenicLinename;
 	@DatabaseField(dataType= DataType.SERIALIZABLE)
 	private ArrayList<Points> sectionPoints;
 	@DatabaseField(width=3)
@@ -117,5 +119,13 @@ public class SectionPointsModel {
 
 	public void setBspotName(String bspotName) {
 		this.bspotName = bspotName;
+	}
+
+	public String getScenicLinename() {
+		return scenicLinename;
+	}
+
+	public void setScenicLinename(String scenicLinename) {
+		this.scenicLinename = scenicLinename;
 	}
 }

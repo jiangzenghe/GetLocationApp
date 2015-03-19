@@ -15,6 +15,8 @@ public class ScenicModel {
 	private String scenicId;//场景id
     @DatabaseField(width=20)
     private String scenicName;//场景名称
+    @DatabaseField(width=30)
+    private String scenicLocation;//场景所在地
     @DatabaseField()
     private Double absoluteLongitude;
     @DatabaseField()
@@ -77,5 +79,13 @@ public class ScenicModel {
     public void setScenicMapurl(String scenicMapurl) {
         this.scenicMapurl = scenicMapurl;
     }
+
+	public String getScenicLocation() {
+		return scenicLocation;
+	}
+
+	public void setScenicLocation(String scenicLocation) {
+		this.scenicLocation = scenicLocation;
+	}
 
 }

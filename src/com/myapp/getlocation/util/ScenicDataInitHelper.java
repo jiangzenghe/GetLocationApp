@@ -68,6 +68,7 @@ public class ScenicDataInitHelper {
 		context.setDaoSpot(daoSpot);
 		context.setDaoPoints(daoSpotPoints);
 		context.setDaoSectionPoints(daoSectionPoints);
+		context.setDaoSection(daoSection);
 		context.setListScenicPoints(listScenicPoints);
 		context.setListScenics(listScenics);
 		
@@ -88,6 +89,7 @@ public class ScenicDataInitHelper {
 	}
 	
 	public void initSpotAndLine(final String scenicId) {
+		progressDialog.show();
 		handlerSpotLine = new MyScenicSpotLineHandler(scenicId);
 		new Thread() {
             @Override
@@ -133,18 +135,19 @@ public class ScenicDataInitHelper {
 	@SuppressLint("NewApi")
 	private void requestDataFromInternet() {
 		//将上次保存到手机的更新系统时间值取出
-        mySharedPreferences = context.getSharedPreferences(Constants.SHAREDPREFERENCES_NAME, 0);
+		mySharedPreferences = context.getSharedPreferences(Constants.SHAREDPREFERENCES_NAME, 0);
         long last = mySharedPreferences.getLong(Constants.INDEX_FLAG, 0);
         long now = System.currentTimeMillis();
+		progressDialog = new ProgressDialog(context);
+        progressDialog.setMessage("数据初始化加载中");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+        editor = mySharedPreferences.edit();
+        editor.putLong(Constants.INDEX_FLAG, now);
+        editor.apply();
         //判断当前手机网络是否可以用，并且距离上次更新是否超过24小时
 //        if (HttpUtil.isNetworkAvailable(context) && (now - last) > 86400000) {
-            progressDialog = new ProgressDialog(context);
-            progressDialog.setMessage("数据初始化加载中");
-            progressDialog.setCancelable(false);
-            progressDialog.show();
-            editor = mySharedPreferences.edit();
-            editor.putLong(Constants.INDEX_FLAG, now);
-            editor.apply();
+            
             //获取所有景区基本资料
             downAndParseData();
 //        } else {
@@ -229,6 +232,7 @@ public class ScenicDataInitHelper {
 	                                scenicModel.setAbsoluteLongitude(jsonArray.getJSONObject(i).getDouble("absoluteLongitude"));
 	                                scenicModel.setAbsoluteLatitude(jsonArray.getJSONObject(i).getDouble("absoluteLatitude"));
 	                                scenicModel.setScenicMapurl(jsonArray.getJSONObject(i).getString("scenicMapurl"));
+	                                scenicModel.setScenicLocation(jsonArray.getJSONObject(i).getString("scenicLocation"));
 	                                
 	                                boolean isHave=false;
 	                                List<ScenicModel> temp=daoModel.queryForEq("scenicId", scenicModel.getScenicId());
@@ -301,9 +305,10 @@ public class ScenicDataInitHelper {
 	                    //json解析并保存的手机的SQLite 数据库
                         dealSpotData(json);
                         dealLineData(json);
+                        progressDialog.dismiss();
 	                }
 	            } catch (Exception e) {
-	                Toast.makeText(context, "spot和line数据加载出错", Toast.LENGTH_SHORT).show();
+	                Toast.makeText(context, "spot或line数据加载出错", Toast.LENGTH_SHORT).show();
 	                progressDialog.dismiss();
 	            }
 	        }
@@ -340,13 +345,13 @@ public class ScenicDataInitHelper {
                     }
                 }
                 
-                Toast.makeText(context, "spot和line数据加载成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "spot数据加载成功", Toast.LENGTH_SHORT).show();
                 searchSpotsData();
-                progressDialog.dismiss();
+                
                 
             } catch (Exception ex) {
                 ex.printStackTrace();
-                Toast.makeText(context, "spot和linet数据加载出错", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "spot数据加载出错", Toast.LENGTH_SHORT).show();
                 progressDialog.dismiss();
             } finally {
             	
@@ -396,6 +401,7 @@ public class ScenicDataInitHelper {
                                 recommendLinesectionModel.setBspotId(jsonArrayL.getJSONObject(j).getString("bspotId"));
                                 recommendLinesectionModel.setAspotName(jsonArrayL.getJSONObject(j).getString("ascenicspotName"));
                                 recommendLinesectionModel.setBspotName(jsonArrayL.getJSONObject(j).getString("bscenicspotName"));
+                                recommendLinesectionModel.setScenicLinename(jsonArrayL.getJSONObject(j).getString("recommendRoutename"));
                                 
                                 boolean isHave=false;
                                 List<ScenicLineSectionModel> temp=daoSection.queryForEq("linesectionId", recommendLinesectionModel.getLinesectionId());
@@ -414,13 +420,12 @@ public class ScenicDataInitHelper {
                         }
                     }
                 }
-                Toast.makeText(context, "spot和line数据加载成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "line数据加载成功", Toast.LENGTH_SHORT).show();
                 searchSpotsData();
-                progressDialog.dismiss();
                 
             } catch (Exception ex) {
                 ex.printStackTrace();
-                Toast.makeText(context, "spot和line数据加载出错", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "line数据加载出错", Toast.LENGTH_SHORT).show();
                 progressDialog.dismiss();
             } finally {
             	

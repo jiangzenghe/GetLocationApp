@@ -1,6 +1,8 @@
 package com.myapp.getlocation.activity;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -40,6 +42,8 @@ import com.myapp.getlocation.View.ScenicPointListView;
 import com.myapp.getlocation.View.ScenicSectionPointView;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.db.EntityHelper;
+import com.myapp.getlocation.entity.Points;
+import com.myapp.getlocation.entity.ScenicLineSectionModel;
 import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
 import com.myapp.getlocation.entity.SectionPointsModel;
@@ -56,12 +60,14 @@ public class MainActivity extends Activity {
 	private BaiduMap mBaiduMap;
 	private boolean isFirstLoc = true;// 
 	private boolean locByHand = false;
+	private boolean locFollow = false;
 	private Marker mMarker;
 	private InfoWindow mInfoWindow;
 	
 	private ScenicDataInitHelper dataInitHelper;
 	private ArrayList<ScenicSpotModel> listScenicPoints;
 	private ArrayList<ScenicModel> listScenics;
+	private SectionPointsModel insertSection;
 	//
 	BitmapDescriptor bdLocation = BitmapDescriptorFactory
 			.fromResource(R.drawable.location);
@@ -69,8 +75,9 @@ public class MainActivity extends Activity {
 	private LocationClient mLocClient;
 	private MyLocationListenner myListener = new MyLocationListenner();
 	
-	private Dao<ScenicSpotModel, Integer> daoSpot;
 	private Dao<ScenicModel, Integer> daoScenics;
+	private Dao<ScenicSpotModel, Integer> daoSpot;
+	private Dao<ScenicLineSectionModel, Integer> daoSection;
 	private Dao<SpotPointsModel, Integer> daoPoints;
 	private Dao<SectionPointsModel, Integer> daoSectionPoints;
 	@Override
@@ -80,11 +87,7 @@ public class MainActivity extends Activity {
 		
 		listScenicPoints = new ArrayList<ScenicSpotModel>();
 		listScenics = new ArrayList<ScenicModel>();
-		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
-		dataInitHelper.setListScenicPoints(listScenicPoints);
-		dataInitHelper.setListScenics(listScenics);
-		dataInitHelper.onCreate();
-
+		
 		RayMenu rayMenu = (RayMenu) findViewById(R.id.ray_menu);
         final int itemCount = ITEM_DRAWABLES.length;
 		for (int i = 0; i < itemCount; i++) {
@@ -97,10 +100,22 @@ public class MainActivity extends Activity {
 				@Override
 				public void onClick(View v) {
 					if(position == 0) {
+						locFollow = false;
+						mBaiduMap.setMyLocationEnabled(false);
+						imgLoc.setImageResource(R.drawable.main_location);
+						insertSectionData();
 						Toast.makeText(MainActivity.this, "收集路段内的点", Toast.LENGTH_SHORT).show();
 					} else if(position == 1) {
+						locFollow = false;
+						mBaiduMap.setMyLocationEnabled(false);
+						imgLoc.setImageResource(R.drawable.main_location);
+						insertSectionData();
 						Toast.makeText(MainActivity.this, "提交已收集的景点", Toast.LENGTH_SHORT).show();
 					} else if(position == 2) {
+						locFollow = false;
+						mBaiduMap.setMyLocationEnabled(false);
+						imgLoc.setImageResource(R.drawable.main_location);
+						insertSectionData();
 						Toast.makeText(MainActivity.this, "提交已收集的路段", Toast.LENGTH_SHORT).show();
 					}
 					functionList(position);
@@ -113,16 +128,25 @@ public class MainActivity extends Activity {
 		mBaiduMap = mMapView.getMap();
 		//
 		mBaiduMap.setMyLocationEnabled(false);
-//		mBaiduMap
-//		.setMyLocationConfigeration(new MyLocationConfiguration(
+		mBaiduMap.getUiSettings().setCompassEnabled(false);
+		mBaiduMap.getUiSettings().setOverlookingGesturesEnabled(false);
+		mBaiduMap.getUiSettings().setRotateGesturesEnabled(false);
+//		mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
 //				mCurrentMode, true, null));
+		
+		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
+		dataInitHelper.setListScenicPoints(listScenicPoints);
+		dataInitHelper.setListScenics(listScenics);
+		dataInitHelper.onCreate();
+		
 		//
 		mLocClient = new LocationClient(this);
 		mLocClient.registerLocationListener(myListener);
 		LocationClientOption option = new LocationClientOption();
 		option.setOpenGps(true);//
+		option.setAddrType("all");
 		option.setCoorType("bd09ll"); //
-		option.setScanSpan(10000);
+		option.setScanSpan(20000);
 		mLocClient.setLocOption(option);
 		mLocClient.start();
 		
@@ -131,9 +155,16 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(View v) {
-				locByHand = true;
-				mBaiduMap.clear();
-				mLocClient.requestLocation();
+				if(locFollow) {
+					locFollow = false;
+					mBaiduMap.setMyLocationEnabled(false);
+					imgLoc.setImageResource(R.drawable.main_location);
+					insertSectionData();
+				} else {
+					locByHand = true;
+					mBaiduMap.clear();
+					mLocClient.requestLocation();
+				}
 				
 			}
 		});
@@ -169,6 +200,10 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onPause() {
 		mMapView.onPause();
+		locFollow = false;
+		mBaiduMap.setMyLocationEnabled(false);
+		imgLoc.setImageResource(R.drawable.main_location);
+		insertSectionData();
 		super.onPause();
 	}
 
@@ -182,8 +217,10 @@ public class MainActivity extends Activity {
 	protected void onDestroy() {
 		//
 		mLocClient.stop();
+		locFollow = false;
 		//
 		mBaiduMap.setMyLocationEnabled(false);
+		insertSectionData();
 		mMapView.onDestroy();
 		mMapView = null;
 		super.onDestroy();
@@ -191,32 +228,55 @@ public class MainActivity extends Activity {
 	
 	private void functionList(int position) {
 		if(position == 0) {
-			String[] items = {"1-秦皇宫至明城陵","2-明城陵至三仙观"};
-			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
-			.setTitle("收集路段内含点列表")
-			.setMessage("开始采集某路段的构成点")
-			.setItems(items, new DialogInterface.OnClickListener() {
+			final ArrayList<ScenicLineSectionModel> listPoints = new ArrayList<ScenicLineSectionModel>();
+			if(daoSection != null) {
+				CloseableIterator<ScenicLineSectionModel> iterator = daoSection.iterator();
 				
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					// TODO Auto-generated method stub
+				while (iterator.hasNext()) {
+					ScenicLineSectionModel entity = iterator.next();
+					listPoints.add(entity);
+				}
+				final String[] items = new String[listPoints.size()];
+				for(ScenicLineSectionModel each:listPoints) {
+					items[listPoints.indexOf(each)] = each.getScenicLinename()+":"+each.getAspotName()+"-"+each.getBspotName();
+				}
+				Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
+				.setTitle("收集路段内含点列表")
+//				.setMessage("开始采集某路段的构成点")
+				.setItems(items, new DialogInterface.OnClickListener() {
 					
-				}
-			})
-			.setPositiveButton("确认", new DialogInterface.OnClickListener() {
-				
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					imgLoc.setImageResource(R.drawable.pause);
-				}
-			})
-			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-				
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-				}
-			}).create();
-			alertDialog.show();
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						locFollow = true;
+						insertSection = new SectionPointsModel();
+						insertSection.setAspotId(listPoints.get(which).getAspotId());
+						insertSection.setBspotId(listPoints.get(which).getBspotId());
+						insertSection.setAspotName(listPoints.get(which).getAspotName());
+						insertSection.setBspotName(listPoints.get(which).getBspotName());
+						insertSection.setLinesectionId(listPoints.get(which).getLinesectionId());
+						insertSection.setScenicLineId(listPoints.get(which).getScenicLineId());
+						insertSection.setScenicLinename(listPoints.get(which).getScenicLinename());
+						insertSection.setRouteOrder(listPoints.get(which).getRouteOrder());
+						insertSection.setScenicId(listPoints.get(which).getScenicId());
+						ArrayList<Points> points = new ArrayList<Points>();
+						insertSection.setSectionPoints(points);
+						insertSection.setPointsNum(0);
+						mBaiduMap.setMyLocationEnabled(true);
+						mLocClient.requestLocation();
+						imgLoc.setImageResource(R.drawable.pause);
+					}
+				})
+				.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+					}
+				}).create();
+				alertDialog.show();
+			} else {
+				Toast.makeText(MainActivity.this, "无路段数据", Toast.LENGTH_SHORT).show();
+			}
+			
 		} else if(position ==1) {
 			final ArrayList<SpotPointsModel> listSpotPoints = new ArrayList<SpotPointsModel>();
 			if(daoPoints != null) {
@@ -226,7 +286,6 @@ public class MainActivity extends Activity {
 					SpotPointsModel entity = iterator.next();
 					listSpotPoints.add(entity);
 				}
-				
 			}
 			ScenicPointListView scenicPointsView = new ScenicPointListView(MainActivity.this, mBaiduMap, listSpotPoints);
 			final Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
@@ -255,7 +314,6 @@ public class MainActivity extends Activity {
 					SectionPointsModel entity = iterator.next();
 					listSectionPoints.add(entity);
 				}
-				
 			}
 			ScenicSectionPointView sectionPointsView = new ScenicSectionPointView(MainActivity.this, mBaiduMap, listSectionPoints);
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
@@ -320,14 +378,12 @@ public class MainActivity extends Activity {
 			// map view
 			if (location == null || mMapView == null)
 				return;
-//			Toast.makeText(MainActivity.this, "" + location.getAltitude() + ","
-//					+ location.getLatitude(), Toast.LENGTH_SHORT)
-//				.show();
 			MyLocationData locData = new MyLocationData.Builder()
 					.accuracy(location.getRadius())
 					//
 					.direction(100).latitude(location.getLatitude())
-					.longitude(location.getLongitude()).build();
+					.longitude(location.getLongitude())
+					.build();
 			mBaiduMap.setMyLocationData(locData);
 			if (isFirstLoc) {
 				LatLng ll = new LatLng(location.getLatitude(),
@@ -335,28 +391,35 @@ public class MainActivity extends Activity {
 				MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
 				mBaiduMap.animateMapStatus(u);
 				
-//				Toast.makeText(MainActivity.this, "" + listScenics.size() + ","
-//						+ location.getLatitude(), Toast.LENGTH_SHORT).show();
+//				Toast.makeText(MainActivity.this, location.getAddrStr()+","
+//						+location.getCity()+","+location.getDistrict(), Toast.LENGTH_SHORT).show();
+				if(location.getCity() == null || location.getDistrict() == null) {
+					return;
+				}
+				
  				if(listScenics.size() > 0) {
-					final String[] items = new String[listScenics.size()];
-					for(ScenicModel each:listScenics) {
-						items[listScenics.indexOf(each)] = each.getScenicName();
-					}
-					Dialog dialogChooseArea = new AlertDialog.Builder(MainActivity.this)
-					.setTitle("请选择景区")
-					.setItems(items, new DialogInterface.OnClickListener() {
-						
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							// TODO Auto-generated method stub
-//							Toast.makeText(MainActivity.this, which+ "," + listScenics.get(which).getScenicId(), Toast.LENGTH_SHORT).show();
-							dataInitHelper.initSpotAndLine(listScenics.get(which).getScenicId());
+ 					String city = location.getCity().substring(0, location.getCity().length()-1);
+ 					String district = location.getDistrict().substring(0, location.getCity().length()-1);
+ 					final ArrayList<ScenicModel> lists = searchEnableScenics(city, district);
+ 					if(lists.size() >0 ) {
+						final String[] items = new String[lists.size()];
+						for(ScenicModel each:lists) {
+							items[lists.indexOf(each)] = each.getScenicName();
 						}
-					})
-					.create();
-					dialogChooseArea.show();
-					//此标志在if进入之后的一开始就赋值为false，但是放在此处保证获取数据之后才置为false
-					isFirstLoc = false;
+						Dialog dialogChooseArea = new AlertDialog.Builder(MainActivity.this)
+						.setTitle("请选择景区")
+						.setItems(items, new DialogInterface.OnClickListener() {
+							
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
+							}
+						})
+						.create();
+						dialogChooseArea.show();
+						//此标志在if进入之后的一开始就赋值为false，但是放在此处保证获取数据之后才置为false
+						isFirstLoc = false;
+ 					}
 				}
 			}
 			if(locByHand) {
@@ -368,6 +431,17 @@ public class MainActivity extends Activity {
 				
 				addOverlay(ll);
 			}
+			if(locFollow) {
+				Toast.makeText(MainActivity.this, "数据："+ location.getLatitude()+","
+						+ location.getLongitude(), Toast.LENGTH_SHORT).show();
+				double longitude = location.getLongitude();
+				double latitude = location.getLatitude();
+				double altitude = location.getAltitude();
+				Points point = new Points(longitude, latitude, altitude);
+				
+				insertSection.getSectionPoints().add(point);
+				insertSection.setPointsNum(insertSection.getPointsNum() + 1);
+			}
 			
 		}
 
@@ -375,6 +449,53 @@ public class MainActivity extends Activity {
 		}
 	}
 
+	private ArrayList<ScenicModel> searchEnableScenics(String city, String district) {
+		ArrayList<ScenicModel> lists = new ArrayList<ScenicModel>();
+		for(ScenicModel each:listScenics) {
+			if(each.getScenicLocation().contains(district)) {
+				lists.add(each);
+			}
+		}
+		if(lists.size() == 0) {
+			for(ScenicModel each:listScenics) {
+				if(each.getScenicLocation().contains(city)) {
+					lists.add(each);
+				}
+			}
+		}
+		return lists;
+	}
+	
+	private void insertSectionData() {
+		if(insertSection != null) {
+			insertSection.setSubmited(false);
+			try {
+				boolean isHave=false;
+				List<SectionPointsModel> tempModel=daoSectionPoints.queryForEq("linesectionId", insertSection.getLinesectionId());
+				for(int i=0;i<tempModel.size();i++){
+					if(tempModel.get(i).getLinesectionId().equals(insertSection.getLinesectionId()))
+					{isHave=true;
+					tempModel.get(i).setSectionPoints(insertSection.getSectionPoints());
+					tempModel.get(i).setPointsNum(insertSection.getPointsNum());
+					daoSectionPoints.createOrUpdate(tempModel.get(i));
+					break;}
+				}
+				if(!isHave){
+					daoSectionPoints.create(insertSection);
+					Toast.makeText(MainActivity.this, "添加成功", Toast.LENGTH_SHORT).show();
+				}
+				else{
+					Toast.makeText(MainActivity.this, "已有该本地数据,修改成功",Toast.LENGTH_SHORT).show();
+				}
+				
+			} catch (SQLException e) {
+				Toast.makeText(MainActivity.this, "添加本地数据错误",Toast.LENGTH_SHORT).show();
+			}
+			insertSection = null;
+		}
+
+	}
+	
 	public Dao<ScenicSpotModel, Integer> getDaoSpot() {
 		return daoSpot;
 	}
@@ -406,6 +527,14 @@ public class MainActivity extends Activity {
 	public void setDaoSectionPoints(
 			Dao<SectionPointsModel, Integer> daoSectionPoints) {
 		this.daoSectionPoints = daoSectionPoints;
+	}
+
+	public Dao<ScenicLineSectionModel, Integer> getDaoSection() {
+		return daoSection;
+	}
+
+	public void setDaoSection(Dao<ScenicLineSectionModel, Integer> daoSection) {
+		this.daoSection = daoSection;
 	}
 
 	public ArrayList<ScenicSpotModel> getListScenicPoints() {

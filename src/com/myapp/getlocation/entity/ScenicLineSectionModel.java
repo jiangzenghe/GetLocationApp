@@ -27,6 +27,8 @@ public class ScenicLineSectionModel {
     private String aspotName;
     @DatabaseField(width=20)
     private String bspotName;
+    @DatabaseField(width=20)
+    private String scenicLinename;
 
     public String getScenicId() {
         return scenicId;
@@ -106,6 +108,14 @@ public class ScenicLineSectionModel {
 
 	public void setBspotName(String bspotName) {
 		this.bspotName = bspotName;
+	}
+
+	public String getScenicLinename() {
+		return scenicLinename;
+	}
+
+	public void setScenicLinename(String scenicLinename) {
+		this.scenicLinename = scenicLinename;
 	}
 
 }
