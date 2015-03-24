@@ -4,6 +4,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -36,6 +40,7 @@ import com.capricorn.ArcMenu;
 import com.capricorn.RayMenu;
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
+import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.View.InsertScenicPointLayout;
 import com.myapp.getlocation.View.ScenicPointListView;
@@ -48,6 +53,7 @@ import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
 import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
+import com.myapp.getlocation.util.HttpUtil;
 import com.myapp.getlocation.util.ScenicDataInitHelper;
 
 public class MainActivity extends Activity {
@@ -295,6 +301,25 @@ public class MainActivity extends Activity {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
+					String data = converToJson(listSpotPoints);
+					if (data.equals("")) return;
+					int result = HttpUtil.doPost(Constants.API_SPOT_SUBMIT, data);
+					if(result == 0) {
+						Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT).show();
+					} else {
+						if(daoPoints != null) {
+							try {
+								for(int i=0;i<listSpotPoints.size();i++){
+									listSpotPoints.get(i).setSubmited(true);
+									daoPoints.createOrUpdate(listSpotPoints.get(i));
+								}
+								Toast.makeText(MainActivity.this, "提交成功", Toast.LENGTH_SHORT).show();
+							} catch (SQLException e) {
+								Toast.makeText(MainActivity.this, "提交成功,修改提交状态出错",Toast.LENGTH_SHORT).show();
+							}
+						}
+					}
+					
 				}
 			})
 			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -335,6 +360,34 @@ public class MainActivity extends Activity {
 			alertDialog.show();
 		}
 	}
+	
+	public String converToJson(ArrayList<SpotPointsModel> list) { 
+		JSONArray array = new JSONArray(); 
+		for (SpotPointsModel spot : list) { 
+			if(!spot.isSubmited()) {
+				JSONObject obj = new JSONObject(); 
+				try { 
+					obj.put("scenicId", spot.getScenicId()); 
+					obj.put("spotId", spot.getSpotId());
+					obj.put("spotType", spot.getSpotType());
+					JSONArray arrayPoints = new JSONArray(); 
+					for (Points point : spot.getSpotPoints()) {
+						JSONObject objPoint = new JSONObject(); 
+						objPoint.put("logitude", point.getAbsoluteLongitude());
+						objPoint.put("latitude", point.getAbsoluteLatitude());
+						objPoint.put("altitude", point.getAbsoluteAltitude());
+						arrayPoints.put(objPoint);
+					}
+					obj.put("spotPoints", arrayPoints);
+				} catch (JSONException e) { // TODO Auto-generated catch block 
+					e.printStackTrace(); 
+				} 
+				array.put(obj); 
+			}
+		} 
+		System.out.println(array.toString()); 
+		return array.toString(); 
+	} 
 	
 	/**
 	 *　获取应用全局的实体处理器对象

@@ -182,6 +182,7 @@ public class ScenicPointListView extends LinearLayout {
 				txtViewId.setText(bean.getSpotId());
 				txtViewName.setText(bean.getScenicspotName());
 				txtViewNum.setText(bean.getPointsNum()+"");
+				ckbSubmit.setChecked(bean.isSubmited());
 				
 			} catch (Exception e) {
 				Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();

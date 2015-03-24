@@ -22,8 +22,9 @@ public class Constants {
     public static final String API_SCENIC_RECOMMEND_DOWNLOAD = "http://www.imyuu.com/trip/allscenicRecommendScenicAreaAction.action";
     public static final String API_USER_SIGN = "http://www.imyuu.com/trip/insertFromAPPRegRegisterAccountAction.action";
     public static final String API_USER_UPDATE = "http://www.imyuu.com/trip/updateFromAPPRegRegisterAccountAction.action";
-    public static final String API_USER_LOGIN = "http://www.imyuu.com/trip/loginInfoFromAPPRegRegisterAccountAction.action";
-
+    public static final String API_SPOT_SUBMIT = "http://192.168.1.114:8000/WebTest/jieshou";
+    public static final String API_SECTION_SUBMIT = "http://www.imyuu.com/trip/loginInfoFromAPPRegRegisterAccountAction.action";
+    
     public static final String SCENIC = "scenic";
     public static final String ALL_SCENIC_ZIP = ".zip";
     public static final String ALL_SCENIC_JSON = ".json";

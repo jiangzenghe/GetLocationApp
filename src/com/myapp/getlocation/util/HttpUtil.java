@@ -14,6 +14,7 @@ import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
@@ -75,6 +76,22 @@ public class HttpUtil {
         return null;
     }
 
+    public static int doPost(String stringUrl, String json) { 
+		String result = null; 
+		HttpPost post = new HttpPost(stringUrl); 
+		HttpResponse httpResponse = null; 
+		try { 
+			StringEntity entity=new StringEntity(json,HTTP.UTF_8); 
+			entity.setContentType("application/json"); 
+			post.setEntity(entity); 
+			httpResponse = new DefaultHttpClient().execute(post); 
+			return httpResponse.getStatusLine().getStatusCode() ; 
+		} catch (Exception e) { 
+			e.printStackTrace(); 
+			return 0; 
+		} 
+	}
+    
     private URL url = null;
 
     /**

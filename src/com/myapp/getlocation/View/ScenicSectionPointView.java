@@ -195,6 +195,7 @@ public class ScenicSectionPointView extends LinearLayout {
 				txtViewId.setText(bean.getLinesectionId());
 				txtViewName.setText(bean.getScenicLinename()+":"+bean.getAspotName()+"-"+bean.getBspotName());
 				txtViewNum.setText(bean.getPointsNum()+"");
+				ckbSubmit.setChecked(bean.isSubmited());
 				
 			} catch (Exception e) {
 				Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
