@@ -125,10 +125,10 @@ public class ScenicSectionPointView extends LinearLayout {
 			IAttachment<SectionPointsModel> binder = new ClassAttachmentImpl<SectionPointsModel>();
 			try {
 				binder.attachToView(context, view, bean);
-				view.setOnTouchListener(new View.OnTouchListener() {
+				view.setOnLongClickListener(new View.OnLongClickListener() {
 					
 					@Override
-					public boolean onTouch(View v, MotionEvent event) {
+					public boolean onLongClick(View v) {
 //						LatLng p1 = new LatLng(39.97923, 116.357428);
 //						LatLng p2 = new LatLng(39.94923, 116.397428);
 //						LatLng p3 = new LatLng(39.97923, 116.437428);
@@ -144,18 +144,22 @@ public class ScenicSectionPointView extends LinearLayout {
 						List<LatLng> pts = new ArrayList<LatLng>(); 
 						for(Points each : points) {//俩个点一样，就看不到线
 							LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());//test
-							pts.add(point);
+							if(point.latitude != 0 && point.longitude != 0) {
+								pts.add(point);
+							}
 						}
-						pts.add(new LatLng(points.get(0).getAbsoluteLatitude(), points.get(0).getAbsoluteLongitude()+0.1));//test
-						//构建用户绘制多边形的Option对象  
-						OverlayOptions polygonOption = new PolylineOptions()  
-						.width(8)
-						.color(0xAAFF0000)
-						.points(pts);
-						//在地图上添加Option，用于显示  
-						mBaiduMap.addOverlay(polygonOption);
+//						pts.add(new LatLng(points.get(0).getAbsoluteLatitude(), points.get(0).getAbsoluteLongitude()+0.1));//test
+						if(pts.size() >=2 && pts.size() <10000) {
+							//构建用户绘制多边形的Option对象  
+							OverlayOptions polygonOption = new PolylineOptions()  
+							.width(8)
+							.color(0xAAFF0000)
+							.points(pts);
+							//在地图上添加Option，用于显示  
+							mBaiduMap.addOverlay(polygonOption);
+						}
 						alertDialog.dismiss();
-						return true;//消耗点击
+						return true;//
 					}
 				});
 				delImage.setOnClickListener(new View.OnClickListener() {

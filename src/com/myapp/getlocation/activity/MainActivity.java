@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -90,6 +91,9 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, 
+				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		
 		listScenicPoints = new ArrayList<ScenicSpotModel>();
 		listScenics = new ArrayList<ScenicModel>();
@@ -301,7 +305,7 @@ public class MainActivity extends Activity {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					String data = converToJson(listSpotPoints);
+					String data = converToSpotJson(listSpotPoints);
 					if (data.equals("")) return;
 					int result = HttpUtil.doPost(Constants.API_SPOT_SUBMIT, data);
 					if(result == 0) {
@@ -348,6 +352,24 @@ public class MainActivity extends Activity {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
+					String data = converToSectionJson(listSectionPoints);
+					if (data.equals("")) return;
+					int result = HttpUtil.doPost(Constants.API_SECTION_SUBMIT, data);
+					if(result == 0) {
+						Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT).show();
+					} else {
+						if(daoPoints != null) {
+							try {
+								for(int i=0;i<listSectionPoints.size();i++){
+									listSectionPoints.get(i).setSubmited(true);
+									daoSectionPoints.createOrUpdate(listSectionPoints.get(i));
+								}
+								Toast.makeText(MainActivity.this, "提交成功", Toast.LENGTH_SHORT).show();
+							} catch (SQLException e) {
+								Toast.makeText(MainActivity.this, "提交成功,修改提交状态出错",Toast.LENGTH_SHORT).show();
+							}
+						}
+					}
 				}
 			})
 			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -361,7 +383,7 @@ public class MainActivity extends Activity {
 		}
 	}
 	
-	public String converToJson(ArrayList<SpotPointsModel> list) { 
+	public String converToSpotJson(ArrayList<SpotPointsModel> list) { 
 		JSONArray array = new JSONArray(); 
 		for (SpotPointsModel spot : list) { 
 			if(!spot.isSubmited()) {
@@ -372,6 +394,34 @@ public class MainActivity extends Activity {
 					obj.put("spotType", spot.getSpotType());
 					JSONArray arrayPoints = new JSONArray(); 
 					for (Points point : spot.getSpotPoints()) {
+						JSONObject objPoint = new JSONObject(); 
+						objPoint.put("logitude", point.getAbsoluteLongitude());
+						objPoint.put("latitude", point.getAbsoluteLatitude());
+						objPoint.put("altitude", point.getAbsoluteAltitude());
+						arrayPoints.put(objPoint);
+					}
+					obj.put("spotPoints", arrayPoints);
+				} catch (JSONException e) { // TODO Auto-generated catch block 
+					e.printStackTrace(); 
+				} 
+				array.put(obj); 
+			}
+		} 
+		System.out.println(array.toString()); 
+		return array.toString(); 
+	} 
+	
+	public String converToSectionJson(ArrayList<SectionPointsModel> list) { 
+		JSONArray array = new JSONArray(); 
+		for (SectionPointsModel section : list) { 
+			if(!section.isSubmited()) {
+				JSONObject obj = new JSONObject(); 
+				try { 
+					obj.put("scenicId", section.getScenicId()); 
+					obj.put("scenicLineId", section.getScenicLineId());
+					obj.put("linesectionId", section.getLinesectionId());
+					JSONArray arrayPoints = new JSONArray(); 
+					for (Points point : section.getSectionPoints()) {
 						JSONObject objPoint = new JSONObject(); 
 						objPoint.put("logitude", point.getAbsoluteLongitude());
 						objPoint.put("latitude", point.getAbsoluteLatitude());
@@ -403,23 +453,6 @@ public class MainActivity extends Activity {
 				.zIndex(9).draggable(false);
 		mMarker = (Marker) (mBaiduMap.addOverlay(oo));
 	}
-	
-	private void initArcMenu(ArcMenu menu, int[] itemDrawables) {
-        final int itemCount = itemDrawables.length;
-        for (int i = 0; i < itemCount; i++) {
-            ImageView item = new ImageView(this);
-            item.setImageResource(itemDrawables[i]);
-
-            final int position = i;
-            menu.addItem(item, new OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    Toast.makeText(MainActivity.this, "position:" + position, Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-    }
 	
 	/**
 	 * 

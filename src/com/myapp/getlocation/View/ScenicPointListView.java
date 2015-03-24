@@ -126,10 +126,10 @@ public class ScenicPointListView extends LinearLayout {
 			IAttachment<SpotPointsModel> binder = new ClassAttachmentImpl<SpotPointsModel>();
 			try {
 				binder.attachToView(context, view, bean);
-				view.setOnTouchListener(new View.OnTouchListener() {
+				view.setOnLongClickListener(new View.OnLongClickListener() {
 					
 					@Override
-					public boolean onTouch(View v, MotionEvent event) {
+					public boolean onLongClick(View v) {
 						ArrayList<Points> points = bean.getSpotPoints();
 						mBaiduMap.clear();
 						for(Points each : points) {
@@ -142,7 +142,7 @@ public class ScenicPointListView extends LinearLayout {
 							mBaiduMap.addOverlay(polygonOption);
 						}
 						alertDialog.dismiss();
-						return true;//消耗点击
+						return true;//
 					}
 				});
 				delImage.setOnClickListener(new View.OnClickListener() {
