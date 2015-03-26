@@ -188,7 +188,6 @@ public class MainActivity extends Activity {
 				layout.setLatLng(ll);
 				layout.setmBaiduMap(mBaiduMap);
 				if(daoSpot != null && daoPoints != null) {
-//					layout.setDaoScenics(daoScenics);
 					layout.setDao(daoSpot);
 					layout.setDaoPoints(daoPoints);
 				}
@@ -252,7 +251,6 @@ public class MainActivity extends Activity {
 				}
 				Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
 				.setTitle("收集路段内含点列表")
-//				.setMessage("开始采集某路段的构成点")
 				.setItems(items, new DialogInterface.OnClickListener() {
 					
 					@Override
@@ -420,6 +418,8 @@ public class MainActivity extends Activity {
 					obj.put("scenicId", section.getScenicId()); 
 					obj.put("scenicLineId", section.getScenicLineId());
 					obj.put("linesectionId", section.getLinesectionId());
+					obj.put("aspotId", section.getAspotId());
+					obj.put("bspotId", section.getBspotId());
 					JSONArray arrayPoints = new JSONArray(); 
 					for (Points point : section.getSectionPoints()) {
 						JSONObject objPoint = new JSONObject(); 

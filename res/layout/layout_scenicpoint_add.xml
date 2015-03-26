@@ -45,7 +45,8 @@
 	        android:layout_marginLeft="10dp"
 	        android:textColor="#ffffff"
 	        android:textStyle="bold"
-	        android:textSize="14sp" />
+	        android:textSize="14sp"
+	        android:hint="点击选择景点类型" />
     </LinearLayout>
     
     <LinearLayout

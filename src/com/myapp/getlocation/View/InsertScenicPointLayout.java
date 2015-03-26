@@ -89,6 +89,14 @@ public class InsertScenicPointLayout extends LinearLayout {
 				mBaiduMap.hideInfoWindow();
 			}
 		});
+        spotTypeTxt.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
         scenicSpotTxt.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
