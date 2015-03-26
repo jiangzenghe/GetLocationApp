@@ -94,7 +94,36 @@ public class InsertScenicPointLayout extends LinearLayout {
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				
+				final String[] items = {"1", "2", "3", "4"};
+				Dialog alertDialog = new AlertDialog.Builder(context)
+				.setTitle("类型列表")
+				.setItems(items, new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						spotTypeTxt.setText(items[which]);
+						searchData();
+						scenicSpotTxt.setText(listScenicPoints.get(0).getScenicspotName());
+						scenicSpotIdTxt.setText(listScenicPoints.get(0).getSpotId());
+					}
+				})
+				.setPositiveButton("确认", new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						spotTypeTxt.setText(items[which]);
+						searchData();
+						scenicSpotTxt.setText(listScenicPoints.get(0).getScenicspotName());
+						scenicSpotIdTxt.setText(listScenicPoints.get(0).getSpotId());
+					}
+				})
+				.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+					}
+				}).create();
+				alertDialog.show();
 			}
 		});
         scenicSpotTxt.setOnClickListener(new View.OnClickListener() {
@@ -188,15 +217,6 @@ public class InsertScenicPointLayout extends LinearLayout {
 	
 	//may be deprecated
 	private void searchData() {
-//		if (daoScenics != null) {
-//			CloseableIterator<ScenicModel> iterator = daoScenics.iterator();
-//			
-//			while (iterator.hasNext()) {
-//				ScenicModel entity = iterator.next();
-//
-//				listScenics.add(entity);
-//			}
-//		}
 		listScenicPoints.clear();
 		if (dao != null) {
 			CloseableIterator<ScenicSpotModel> iterator = dao.iterator();

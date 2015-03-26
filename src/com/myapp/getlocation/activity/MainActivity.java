@@ -36,6 +36,7 @@ import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
+import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.capricorn.ArcMenu;
 import com.capricorn.RayMenu;
@@ -87,6 +88,8 @@ public class MainActivity extends Activity {
 	private Dao<ScenicLineSectionModel, Integer> daoSection;
 	private Dao<SpotPointsModel, Integer> daoPoints;
 	private Dao<SectionPointsModel, Integer> daoSectionPoints;
+	
+	private Points initPoint;//动态线的第一个点
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -141,6 +144,8 @@ public class MainActivity extends Activity {
 		mBaiduMap.getUiSettings().setCompassEnabled(false);
 		mBaiduMap.getUiSettings().setOverlookingGesturesEnabled(false);
 		mBaiduMap.getUiSettings().setRotateGesturesEnabled(false);
+		MapStatusUpdate u = MapStatusUpdateFactory.zoomTo(16);
+		mBaiduMap.setMapStatus(u);
 //		mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
 //				mCurrentMode, true, null));
 		
@@ -256,6 +261,7 @@ public class MainActivity extends Activity {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						locFollow = true;
+						InitDynamicLine();
 						insertSection = new SectionPointsModel();
 						insertSection.setAspotId(listPoints.get(which).getAspotId());
 						insertSection.setBspotId(listPoints.get(which).getBspotId());
@@ -524,6 +530,7 @@ public class MainActivity extends Activity {
 				double latitude = location.getLatitude();
 				double altitude = location.getAltitude();
 				Points point = new Points(longitude, latitude, altitude);
+				DrawDynamicLine(point);
 				
 				insertSection.getSectionPoints().add(point);
 				insertSection.setPointsNum(insertSection.getPointsNum() + 1);
@@ -535,6 +542,39 @@ public class MainActivity extends Activity {
 		}
 	}
 
+	private void InitDynamicLine() {
+		initPoint = new Points(0.0, 0.0, 0.0);
+		MapStatusUpdate arg0 = MapStatusUpdateFactory.zoomTo(18);
+		mBaiduMap.setMapStatus(arg0);
+		mBaiduMap.clear();
+	}
+	
+	private void DrawDynamicLine(Points point) {
+		List<LatLng> pts = new ArrayList<LatLng>(); 
+		LatLng arg0 = new LatLng(initPoint.getAbsoluteLatitude(), 
+				initPoint.getAbsoluteLongitude());
+		LatLng arg1 = new LatLng(point.getAbsoluteLatitude(), 
+				point.getAbsoluteLongitude());
+		if(arg0.latitude != 0 && arg0.longitude != 0
+				&& arg1.latitude !=0 && arg1.longitude !=0) {
+			pts.add(arg0);
+		}
+		if(arg1.latitude !=0 && arg1.longitude !=0) {
+			pts.add(arg1);
+			initPoint.setAbsoluteLatitude(point.getAbsoluteLatitude());
+			initPoint.setAbsoluteLongitude(point.getAbsoluteLongitude());
+		}
+		//构建用户绘制多边形的Option对象  
+		if(pts.size() >=2) {
+			OverlayOptions polygonOption = new PolylineOptions()  
+			.width(8)
+			.color(0xAAFF0000)
+			.points(pts);
+			//在地图上添加Option，用于显示  
+			mBaiduMap.addOverlay(polygonOption);
+		}
+	}
+	
 	private ArrayList<ScenicModel> searchEnableScenics(String city, String district) {
 		ArrayList<ScenicModel> lists = new ArrayList<ScenicModel>();
 		for(ScenicModel each:listScenics) {
