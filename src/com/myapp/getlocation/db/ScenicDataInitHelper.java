@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.myapp.getlocation.util;
+package com.myapp.getlocation.db;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -32,6 +32,9 @@ import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
 import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
+import com.myapp.getlocation.util.FileUtil;
+import com.myapp.getlocation.util.HttpUtil;
+import com.myapp.getlocation.util.ZipUtil;
 
 /**
  * @author Jiang

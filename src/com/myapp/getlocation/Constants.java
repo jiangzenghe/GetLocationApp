@@ -24,8 +24,8 @@ public class Constants {
     public static final String API_USER_UPDATE = "http://www.imyuu.com/trip/updateFromAPPRegRegisterAccountAction.action";
 //    public static final String API_SPOT_SUBMIT = "http://192.168.1.114:8000/WebTest/jieshou";
 //    public static final String API_SECTION_SUBMIT = "http://www.imyuu.com/trip/loginInfoFromAPPRegRegisterAccountAction.action";
-    public static final String API_SPOT_SUBMIT = "http://imyuu/IUURestful/restful/collection/uploadScenicSpots";
-    public static final String API_SECTION_SUBMIT = "http://imyuu/IUURestful/restful/collection/uploadScenicLines";
+    public static final String API_SPOT_SUBMIT = "http://imyuu.com/IUURestful/restful/collection/uploadScenicSpots";
+    public static final String API_SECTION_SUBMIT = "http://imyuu.com/IUURestful/restful/collection/uploadScenicLines";
     
     public static final String SCENIC = "scenic";
     public static final String ALL_SCENIC_ZIP = ".zip";

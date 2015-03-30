@@ -61,7 +61,7 @@
         
         <meta-data
             android:name="framework.config.database.file.path"
-            android:value="/mnt/sdcard/GetLocation/database/scenic.db" />
+            android:value="/data/data/com.myapp.getlocation/scenic.db" />
         <meta-data
             android:name="framework.config.properties.app.config"
             android:resource="@raw/appinitconfig" />
@@ -74,14 +74,24 @@
             android:process=":remote" >
         </service>
         <activity
+            android:name="com.myapp.getlocation.activity.SplashActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden" >
+            <meta-data
+                android:name="com.myapp.getlocation.activity.SplashActivity.app.target.activity"
+                android:value="com.myapp.getlocation.activity.MainActivity" />
+			<meta-data
+                android:name="com.myapp.getlocation.activity.SplashActivity.image.resource.id"
+                android:resource="@drawable/splash"/>
+            <intent-filter>
+               <action android:name="android.intent.action.MAIN" />
+               <category android:name="android.intent.category.LAUNCHER" />
+           	</intent-filter> 
+        </activity>
+        <activity
             android:name="com.myapp.getlocation.activity.MainActivity"
             android:label="@string/app_name" 
             android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
     </application>
 

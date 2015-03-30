@@ -49,6 +49,7 @@ import com.myapp.getlocation.View.ScenicPointListView;
 import com.myapp.getlocation.View.ScenicSectionPointView;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.db.EntityHelper;
+import com.myapp.getlocation.db.ScenicDataInitHelper;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.ScenicLineSectionModel;
 import com.myapp.getlocation.entity.ScenicModel;
@@ -56,7 +57,6 @@ import com.myapp.getlocation.entity.ScenicSpotModel;
 import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
 import com.myapp.getlocation.util.HttpUtil;
-import com.myapp.getlocation.util.ScenicDataInitHelper;
 
 public class MainActivity extends Activity {
 
