@@ -3,6 +3,7 @@ package com.myapp.getlocation;
 import com.baidu.mapapi.SDKInitializer;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.application.ApplicationInitializationChain;
+import com.myapp.getlocation.application.HttpServiceComponentInitialization;
 import com.myapp.getlocation.application.SQLiteDataBaseInitialization;
 import com.myapp.getlocation.application.SynchronismSupport;
 import com.myapp.getlocation.util.AppConfigFileLoader;
@@ -32,8 +33,8 @@ public class GetLocationApplication extends Application {
 //		next.setNext(new GsonBuilderComponentInitialization());
 //		next = next.getNext();
 //		
-//		next.setNext(new HttpServiceComponentInitialization());
-//		next = next.getNext();
+		next.setNext(new HttpServiceComponentInitialization());
+		next = next.getNext();
 //		
 		next.setNext(new SQLiteDataBaseInitialization());
 		next = next.getNext();

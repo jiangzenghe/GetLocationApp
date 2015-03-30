@@ -11,8 +11,9 @@ import android.util.Log;
 
 import com.google.gson.GsonBuilder;
 import com.myapp.getlocation.db.EntityHelper;
+import com.myapp.getlocation.http.DefaultHttpService;
+import com.myapp.getlocation.http.HttpService;
 import com.myapp.getlocation.util.ActivitysManager;
-import com.myapp.getlocation.util.AppConfigFileLoader;
 import com.myapp.getlocation.util.Util;
 
 /**
@@ -29,7 +30,7 @@ public class Application extends android.app.Application {
 	private List<ApplicationExitListener> exitListeners;
 	private EntityHelper entityHelper;
 	private Properties fileMimeType;
-	
+	private DefaultHttpService httpService;
 	private Bundle bundle;
 	private GsonBuilder gsonBuilder;
     
@@ -59,20 +60,24 @@ public class Application extends android.app.Application {
 	}
 
 	/**
-	 * 提供了预定义的应用组件初始化链构建与执行。
+	 * 创建JsonHttpService接口对象。
+	 * @param httpService
+	 * @return
 	 */
-	public void predefineAppInitChain() {
-		ApplicationInitializationChain root = new SynchronismSupport();
-		ApplicationInitializationChain next = root;
-		next.setNext(new SQLiteDataBaseInitialization());
-		next = next.getNext();
-		next.setNext(new AppConfigFileLoader());
-		next = next.getNext();
-//		next.setNext(new BaiduMapComponentInitialization());
-//		next = next.getNext();
-		root.doProcess(this);
+	public DefaultHttpService createDefaultHttpService(DefaultHttpService httpService) {
+		DefaultHttpService defaultHttpService = 
+				new DefaultHttpService(httpService);
+		return defaultHttpService;
 	}
-
+	
+	/**
+	 * 创建JsonHttpService接口对象。
+	 * @return
+	 */
+	public DefaultHttpService createDefaultHttpService() {
+		return createDefaultHttpService(getHttpService());
+	}
+	
 	/**
 	 * 打开指定的SQLite数据库文件。
 	 * @param dbFile
@@ -151,6 +156,14 @@ public class Application extends android.app.Application {
 			this.entityHelper.close();
 		}
 		this.entityHelper = entityHelper;
+	}
+	
+	public DefaultHttpService getHttpService() {
+		return httpService;
+	}
+	
+	public void setDefaultHttpService(DefaultHttpService httpService){
+		this.httpService = httpService;
 	}
 	
 	public Properties getFileMimeType() {

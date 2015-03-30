@@ -3,6 +3,7 @@ package com.myapp.getlocation.util;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.NameValuePair;
@@ -23,6 +24,8 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
+
+import com.myapp.getlocation.http.MySSLSocketFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;

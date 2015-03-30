@@ -1,4 +1,4 @@
-package com.myapp.getlocation.util;
+package com.myapp.getlocation.http;
 
 
 import org.apache.http.conn.ssl.SSLSocketFactory;
