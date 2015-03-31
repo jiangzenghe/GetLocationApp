@@ -9,6 +9,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 
+import com.haiyisoft.mobile.android.update.AutoUpdate;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.util.Util;
 
@@ -24,6 +25,7 @@ public class SplashActivity extends Activity {
 	
 	private long sleepTime;
 	private long interval;
+	private AutoInit initer;
 	
 	public SplashActivity() {
 		setSleepTime(3000);
@@ -41,6 +43,8 @@ public class SplashActivity extends Activity {
 		if (resId != 0) {
 			layout.setBackgroundResource(resId);
 		}
+		initer = new AutoInit(this);
+		initer.start();
 		
 	}
 	
