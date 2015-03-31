@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.security.KeyStore;
@@ -50,6 +53,8 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.json.JSONException;
 
+import com.myapp.getlocation.util.FileUtil;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.AsyncTask;
@@ -64,7 +69,7 @@ import android.util.Log;
 public class DefaultHttpService implements HttpService {
 	@SuppressWarnings("unused")
 	private static final String TAG = DefaultHttpService.class.getSimpleName();
-	private static final String USERAGENT = "haiyi.mobile.android.app.framework";
+	private static final String USERAGENT = "my.mobile.android.app.framework";
 	private static DefaultHttpService instance = null;//单例对象
 	/**
 	 * 获取单例对象
@@ -106,8 +111,8 @@ public class DefaultHttpService implements HttpService {
 	
 	public DefaultHttpService(DefaultHttpService httpService) {
 		super();
-		this.baseAddress = httpService.baseAddress;
-		this.encoding = httpService.encoding;
+		this.baseAddress = httpService.getBaseAddress();
+		this.encoding = httpService.getEncoding();
 		this.httpContext = httpService.httpContext;
 		this.httpClient = getNewHttpClient();
 	}
@@ -179,37 +184,6 @@ public class DefaultHttpService implements HttpService {
 	    }
 	}
 
-	/**
-	 * 同步访问服务
-	 * @throws IOException 
-	 * @throws ClientProtocolException 
-	 */
-	@Override
-	public HttpResponse synCallService(HttpUriRequest request) throws ClientProtocolException, IOException {
-		HttpResponse response = httpClient.execute(request);
-		return response;
-	}
-	/**
-	 * 同步Post请求服务
-	 */
-	@Override
-	public HttpResponse synCallPostService(String svcName, Map<String, Object> args) throws ClientProtocolException, IOException {
-		HttpPost request = new HttpPost(createAddress(svcName).toString());
-		
-		List<NameValuePair> formparams = createFormData(args);
-		UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formparams, getEncoding());
-		request.setEntity(entity);
-		return synCallService(request);
-	}
-	/**
-	 * 同步Get请求服务
-	 */
-	@Override
-	public HttpResponse synCallGetService(String svcName, Map<String, Object> args) throws ClientProtocolException,	IOException {
-		StringBuffer uri = createGetRequest(svcName, args);
-		HttpGet request = new HttpGet(uri.toString());
-		return synCallService(request);
-	}
 
 	/**
 	 * 异步请求服务
@@ -247,104 +221,65 @@ public class DefaultHttpService implements HttpService {
 		
 	}
 	
-	public void callPostService(String svcName, Map<String, Object> args, boolean multipart, HttpServiceHandler handler) throws UnsupportedEncodingException {
-		if (!multipart) {
-			callPostService(svcName, args, handler);
-		}
-		else {
-			MultipartEntity entity = buildMultipartEntity(args);
-			HttpPost request = new HttpPost(createAddress(svcName).toString());
-			request.setEntity(entity);
-			callService(request, handler);
-		}
-	}
-	/**
-	 * 根据传入的映射参数构建HTTP分段请求实体对象。
-	 * @param args http请求映射参数。
-	 * @return
-	 * @throws UnsupportedEncodingException
-	 */
-	protected MultipartEntity buildMultipartEntity(Map<String, Object> args) throws UnsupportedEncodingException {
-		MultipartEntity entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
-		for (Map.Entry<String, Object> arg : args.entrySet()) {
-			String key = arg.getKey();
-			Object value = arg.getValue();
-			
-			buildCotentBody(entity, key, value);
-		}
-		return entity;
-	}
-	/**
-	 * 根据value参数的值类型，生成ContentBody对象加入到entity参数指定的对象中去。
-	 * @param entity 一个HTTP请求实体。
-	 * @param key 参数名
-	 * @param value 参数值
-	 * @throws UnsupportedEncodingException 
-	 */
-	private void buildCotentBody(MultipartEntity entity, String key, Object value) throws UnsupportedEncodingException {
-		ContentBody body = null;
-		if (value instanceof File) {
-			body = buildFileBody((File)value);
-		}
-		else if (value instanceof InputStream) {
-			body = new InputStreamBody((InputStream)value, key);
-		}
-		else if (value instanceof byte[]) {
-			body = new ByteArrayBody((byte[])value, key);
-		}
-		else if (value instanceof Set<?>) {
-			Set<?> collection = (Set<?>)value;
-			for (Object subItem : collection) {
-				buildCotentBody(entity, key, subItem);
-			}
-		}
-		else if (value instanceof List<?>) {
-			List<?> collection = (List<?>)value;
-			for (Object subItem : collection) {
-				buildCotentBody(entity, key, subItem);
-			}
-		}
-		else {
-			body = new StringBody(value.toString(), Charset.forName(getEncoding()));
-		}
+	@Override
+	public void callPostService(String svcName, HttpServiceHandler handler) throws UnsupportedEncodingException {
+		HttpPost request = new HttpPost(createAddress(svcName).toString());
 		
-		if (body != null) {
-			entity.addPart(key, body);
-		}
-	}
-	/**
-	 * 获取文件扩展名。
-	 * @param file
-	 * @return
-	 */
-	private String getFileExtName(File file) {
-		int pos = file.getName().lastIndexOf(".");
-		if (pos == -1) {
-			return null;
-		}
-		else {
-			return file.getName().substring(pos).toLowerCase();
-		}
+		callService(request, handler);
 	}
 	
+	@Override
+	public int downFile(String urlStr, String path, String fileName, HttpServiceHandler handler) {
+        InputStream inputStream = null;
+        try {
+            FileUtil fileUtil = new FileUtil();
+
+            if (fileUtil.isFileExist(path + fileName)) {
+                return 1;
+            } else {
+                inputStream = getInputStreamFromURL(urlStr);
+                File resultFile = fileUtil.write2SDFromInput(path, fileName, inputStream);
+                if (resultFile == null) {
+                    return -1;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        } finally {
+            try {
+                if (inputStream != null)
+                    inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        }
+        return 0;
+    }
+	
 	/**
-	 * 通过文件对象，生成一个FileBody对象，用于文件的上传。
-	 * @param file
-	 * @return
-	 */
-	private FileBody buildFileBody(File file) {
-		String fileExtName = getFileExtName(file);
-		if (fileExtName == null) {
-			return new FileBody(file);
-		}
-		
-		String mimeType = this.getFileMimeType().getProperty(fileExtName);
-		if (mimeType == null) {
-			return new FileBody(file);	
-		}
-		
-		return new FileBody(file, mimeType);
-	}
+     * 根据URL得到输入流
+     *
+     * @param urlStr
+     * @return
+     */
+    public InputStream getInputStreamFromURL(String urlStr) {
+        HttpURLConnection urlConn = null;
+        InputStream inputStream = null;
+        try {
+        	URL url = new URL(urlStr);
+            urlConn = (HttpURLConnection) url.openConnection();
+            inputStream = urlConn.getInputStream();
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return inputStream;
+    }
 	
 	/**
 	 * 该方法将构建一个服务地址字符串缓冲器对象，这个方法的主要功能就是分析了服务基地址尾部与服务名头部是否存有"\"，

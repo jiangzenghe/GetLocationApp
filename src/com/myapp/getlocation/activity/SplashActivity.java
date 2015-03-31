@@ -1,16 +1,22 @@
 package com.myapp.getlocation.activity;
 
 
-import android.app.Activity;
+import java.io.UnsupportedEncodingException;
+
+import org.apache.http.HttpResponse;
+
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
-import com.haiyisoft.mobile.android.update.AutoUpdate;
 import com.myapp.getlocation.R;
+import com.myapp.getlocation.http.HttpServiceHandler;
+import com.myapp.getlocation.http.HttpServiceProgressWrapper.ProgressDialogHandler;
 import com.myapp.getlocation.util.Util;
 
 /**
@@ -31,6 +37,28 @@ public class SplashActivity extends Activity {
 		setSleepTime(3000);
 	}
 	
+	private class DownFileHandler implements HttpServiceHandler {
+
+		@Override
+		public void onHttpServicePrepare(HttpResponse response) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onHttpServiceFinished(HttpResponse response) {
+			// TODO Auto-generated method stub
+			Toast.makeText(SplashActivity.this, "finish", Toast.LENGTH_SHORT).show();
+		}
+
+		@Override
+		public void onHttpServiceError(Exception e) {
+			// TODO Auto-generated method stub
+			Toast.makeText(SplashActivity.this, "error", Toast.LENGTH_SHORT).show();
+		}
+		
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -43,15 +71,30 @@ public class SplashActivity extends Activity {
 		if (resId != 0) {
 			layout.setBackgroundResource(resId);
 		}
-		initer = new AutoInit(this);
-		initer.start();
+		
+		// 远程连接时，使用进度对话框
+		ProgressDialog defaultDialog = new ProgressDialog(this);
+		defaultDialog
+				.setMessage("等待中");
+		ProgressDialogHandler handler = new ProgressDialogHandler(
+				defaultDialog);
+		DownFileHandler downHander = new DownFileHandler();
+		
+		try {
+			this.getDefaultHttpService(handler).callPostService("allScenicScenicAreaAction.action", downHander);
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+//		initer = new AutoInit(this);
+//		initer.start();
 		
 	}
 	
 	@Override
 	protected void onResume() {
 		super.onResume();
-		sleep();
+//		sleep();
 	}
 	/**
 	 * 

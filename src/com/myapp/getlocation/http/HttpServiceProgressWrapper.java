@@ -1,6 +1,7 @@
 package com.myapp.getlocation.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
@@ -10,8 +11,6 @@ import org.apache.http.client.methods.HttpUriRequest;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.view.View;
-import android.widget.ProgressBar;
 
 /**
  * 这个类是HttpServer类的一个扩展类，这个类通过调用HttpService类成员的方法重新实现了
@@ -93,30 +92,6 @@ public class HttpServiceProgressWrapper extends DefaultHttpService {
 			this.progressDialog.cancel();	
 		}
 	}
-	
-	/**
-	 * 进度条处理器
-	 */
-	public static class ProgressBarHandler extends ProgressHandler {
-		private ProgressBar progressBar;
-		
-		public ProgressBarHandler(ProgressBar progressBar) {
-			this.progressBar = progressBar;
-		}
-	
-		@Override
-		public void open() {
-			this.progressBar.setVisibility(View.VISIBLE);
-			this.progressBar.setIndeterminate(true);
-		}
-
-		@Override
-		public void close() {
-			this.progressBar.setIndeterminate(false);
-			this.progressBar.setProgress(this.progressBar.getMax());
-			this.progressBar.setVisibility(View.GONE);
-		}
-	}
 		
 	private ProgressHandler progressHandler;
 	private HttpService httpService;
@@ -133,13 +108,6 @@ public class HttpServiceProgressWrapper extends DefaultHttpService {
 	public HttpServiceProgressWrapper(ProgressDialog dialog, HttpService httpService) {
 		this(new ProgressDialogHandler(dialog), httpService);
 	}
-	public HttpServiceProgressWrapper(ProgressBar progressbar, HttpService httpService) {
-		this(new ProgressBarHandler(progressbar), httpService);
-	}
-	public HttpServiceProgressWrapper(ProgressBar progressbar) {
-		this(new ProgressBarHandler(progressbar));
-	}
-	
 	public HttpServiceProgressWrapper(ProgressHandler handler, HttpService httpService) {
 		this.setProgressHandler(handler);
 		this.httpService = httpService;
@@ -148,31 +116,6 @@ public class HttpServiceProgressWrapper extends DefaultHttpService {
 		this(handler, DefaultHttpService.getInstance());
 	}
 	
-	@Override
-	public HttpResponse synCallService(HttpUriRequest request) throws ClientProtocolException, IOException {
-		getProgressHandler().open();
-		HttpResponse response = httpService.synCallService(request);
-		getProgressHandler().close();
-		return response;
-	}
-	@Override
-	public HttpResponse synCallGetService(String svcName,
-			Map<String, Object> args) throws ClientProtocolException,
-			IOException {
-		getProgressHandler().open();
-		HttpResponse response = httpService.synCallGetService(svcName, args);
-		getProgressHandler().close();
-		return response;
-	}
-	@Override
-	public HttpResponse synCallPostService(String svcName,
-			Map<String, Object> args) throws ClientProtocolException,
-			IOException {
-		getProgressHandler().open();
-		HttpResponse response = httpService.synCallPostService(svcName, args);
-		getProgressHandler().close();
-		return response;
-	}
 	@Override
 	public void callGetService(String svcName, Map<String, Object> args,
 			HttpServiceHandler handler) throws ClientProtocolException,
@@ -190,14 +133,28 @@ public class HttpServiceProgressWrapper extends DefaultHttpService {
 		httpService.callPostService(svcName, args, getProgressHandler());
 	}
 	
-
+	@Override
+	public void callPostService(String svcName,
+			HttpServiceHandler handler) throws UnsupportedEncodingException {
+		getProgressHandler().setHandler(handler);
+		getProgressHandler().open();
+		httpService.callPostService(svcName, getProgressHandler());
+	}
+	
 	@Override
 	public void callService(HttpUriRequest request, HttpServiceHandler handler) {
 		getProgressHandler().setHandler(handler);
 		getProgressHandler().open();
 		httpService.callService(request, getProgressHandler());
 	}
-
+	
+	@Override
+	public int downFile(String urlStr, String path, String fileName, HttpServiceHandler handler) {
+		getProgressHandler().setHandler(handler);
+		getProgressHandler().open();
+		return httpService.downFile(urlStr, path, fileName, getProgressHandler());
+	}
+	
 	@Override
 	public String getBaseAddress() {
 		return httpService.getBaseAddress();
@@ -213,15 +170,6 @@ public class HttpServiceProgressWrapper extends DefaultHttpService {
 	@Override
 	public void setEncoding(String encoding) {
 		httpService.setEncoding(encoding);
-	}
-	@Override
-	public void callPostService(String svcName, Map<String, Object> args,
-			boolean multipart, HttpServiceHandler handler)
-			throws UnsupportedEncodingException {
-		getProgressHandler().setHandler(handler);
-		getProgressHandler().open();
-		httpService.callPostService(svcName, args, multipart, getProgressHandler());
-		
 	}
 	public ProgressHandler getProgressHandler() {
 		return progressHandler;

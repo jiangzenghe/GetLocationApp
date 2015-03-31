@@ -68,6 +68,12 @@
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="xXWo54UG9hzpQiQ9h6rr1Gru" />
+        <meta-data
+            android:name="framework.config.service.base.address"
+            android:value="http://www.imyuu.com/trip/" />
+        <meta-data
+            android:name="framework.config.service.encoding"
+            android:value="utf-8" />
         <service
             android:name="com.baidu.location.f"
             android:enabled="true"

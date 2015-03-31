@@ -60,7 +60,7 @@ public class Application extends android.app.Application {
 	}
 
 	/**
-	 * 创建JsonHttpService接口对象。
+	 * 创建HttpService接口对象。
 	 * @param httpService
 	 * @return
 	 */

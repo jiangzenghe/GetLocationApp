@@ -8,7 +8,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -38,7 +37,6 @@ import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.model.LatLng;
-import com.capricorn.ArcMenu;
 import com.capricorn.RayMenu;
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
@@ -47,9 +45,6 @@ import com.myapp.getlocation.R;
 import com.myapp.getlocation.View.InsertScenicPointLayout;
 import com.myapp.getlocation.View.ScenicPointListView;
 import com.myapp.getlocation.View.ScenicSectionPointView;
-import com.myapp.getlocation.application.Application;
-import com.myapp.getlocation.db.EntityHelper;
-import com.myapp.getlocation.db.ScenicDataInitHelper;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.ScenicLineSectionModel;
 import com.myapp.getlocation.entity.ScenicModel;
@@ -72,7 +67,6 @@ public class MainActivity extends Activity {
 	private Marker mMarker;
 	private InfoWindow mInfoWindow;
 	
-	private ScenicDataInitHelper dataInitHelper;
 	private ArrayList<ScenicSpotModel> listScenicPoints;
 	private ArrayList<ScenicModel> listScenics;
 	private SectionPointsModel insertSection;
@@ -97,9 +91,6 @@ public class MainActivity extends Activity {
 		
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON, 
 				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		
-		listScenicPoints = new ArrayList<ScenicSpotModel>();
-		listScenics = new ArrayList<ScenicModel>();
 		
 		RayMenu rayMenu = (RayMenu) findViewById(R.id.ray_menu);
         final int itemCount = ITEM_DRAWABLES.length;
@@ -149,10 +140,12 @@ public class MainActivity extends Activity {
 //		mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
 //				mCurrentMode, true, null));
 		
-		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
-		dataInitHelper.setListScenicPoints(listScenicPoints);
-		dataInitHelper.setListScenics(listScenics);
-		dataInitHelper.onCreate();
+		listScenicPoints = new ArrayList<ScenicSpotModel>();
+		listScenics = new ArrayList<ScenicModel>();
+//		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
+//		dataInitHelper.setListScenicPoints(listScenicPoints);
+//		dataInitHelper.setListScenics(listScenics);
+//		dataInitHelper.onCreate();
 		
 		//
 		mLocClient = new LocationClient(this);
@@ -445,15 +438,6 @@ public class MainActivity extends Activity {
 		return array.toString(); 
 	} 
 	
-	/**
-	 *　获取应用全局的实体处理器对象
-	 * @return EntityHelper实体处理器对象
-	 */
-	public EntityHelper getEntityHelper() {
-		Application app = (Application)getApplication();
-		return app.getEntityHelper();
-	}
-	
 	private void addOverlay(LatLng ll) {
 		OverlayOptions oo = new MarkerOptions().position(ll).icon(bdLocation)
 				.zIndex(9).draggable(false);
@@ -504,7 +488,7 @@ public class MainActivity extends Activity {
 							
 							@Override
 							public void onClick(DialogInterface dialog, int which) {
-								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
+//								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
 							}
 						})
 						.create();

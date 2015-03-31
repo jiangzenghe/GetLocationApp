@@ -78,16 +78,16 @@ public class ScenicDataInitHelper {
 	}
 	
 	private void initData() {
-		try {
-			daoModel = context.getEntityHelper().getDao(ScenicModel.class);
-			daoSpot = context.getEntityHelper().getDao(ScenicSpotModel.class);
-			daoLine = context.getEntityHelper().getDao(ScenicLineModel.class);
-			daoSection = context.getEntityHelper().getDao(ScenicLineSectionModel.class);
-			daoSpotPoints = context.getEntityHelper().getDao(SpotPointsModel.class);
-			daoSectionPoints = context.getEntityHelper().getDao(SectionPointsModel.class);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			daoModel = context.getEntityHelper().getDao(ScenicModel.class);
+//			daoSpot = context.getEntityHelper().getDao(ScenicSpotModel.class);
+//			daoLine = context.getEntityHelper().getDao(ScenicLineModel.class);
+//			daoSection = context.getEntityHelper().getDao(ScenicLineSectionModel.class);
+//			daoSpotPoints = context.getEntityHelper().getDao(SpotPointsModel.class);
+//			daoSectionPoints = context.getEntityHelper().getDao(SectionPointsModel.class);
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//		}
 		
 	}
 	

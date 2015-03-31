@@ -190,8 +190,8 @@ public class Activity extends FragmentActivity {
 	}
 	
 	/**
-	 * 获取json网络服务对象.
-	 * @return json网络服务对象
+	 * 获取网络服务对象.
+	 * @return 网络服务对象
 	 */
 	public DefaultHttpService getDefaultHttpService() {
 		if(defaultHttpService==null){
@@ -223,12 +223,12 @@ public class Activity extends FragmentActivity {
 	 *该类继承了ProgressHandler类实现了open,close方法
 	 *以控制Activity的标题栏上的进度的状态 
 	 *open表示当前正在请求网络服务，close表示请求网络服务结束
-	 * @author DingBaoSheng
+	 * @author
 	 * 
 	 * <p>Modification History:</p>
 	 * <p>Date       Author      Description</p>
 	 * <p>------------------------------------------------------------------</p>
-	 * <p>2013.4.2   DingBaoSheng   新建  </p>
+	 * <p>   新建  </p>
 	 * <p>  </p>
 	 */
 	private class ProgressTitleHandler extends ProgressHandler{
