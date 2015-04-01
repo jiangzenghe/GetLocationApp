@@ -66,7 +66,7 @@ public class HttpServiceComponentInitialization extends ApplicationInitializatio
 				defaultHttpService.setBaseAddress(baseAddress);
 				defaultHttpService.setEncoding(encode);
 				defaultHttpService.setFileMimeType(app.getFileMimeType());
-				app.setDefaultHttpService(defaultHttpService);
+				app.setHttpService(defaultHttpService);
 			}
 			else {
 				Log.w(TAG, "没有指定服务基地址参数，应用将不能访问网络资源。");

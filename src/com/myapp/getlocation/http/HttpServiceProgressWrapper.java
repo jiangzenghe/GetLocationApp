@@ -149,13 +149,6 @@ public class HttpServiceProgressWrapper extends DefaultHttpService {
 	}
 	
 	@Override
-	public int downFile(String urlStr, String path, String fileName, HttpServiceHandler handler) {
-		getProgressHandler().setHandler(handler);
-		getProgressHandler().open();
-		return httpService.downFile(urlStr, path, fileName, getProgressHandler());
-	}
-	
-	@Override
 	public String getBaseAddress() {
 		return httpService.getBaseAddress();
 	}

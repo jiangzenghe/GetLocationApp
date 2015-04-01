@@ -70,7 +70,8 @@
             android:value="xXWo54UG9hzpQiQ9h6rr1Gru" />
         <meta-data
             android:name="framework.config.service.base.address"
-            android:value="http://www.imyuu.com/trip/" />
+            android:value="http://www.imyuu.com" />
+        <!-- 123.341212/trip -->
         <meta-data
             android:name="framework.config.service.encoding"
             android:value="utf-8" />

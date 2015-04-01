@@ -48,7 +48,7 @@ public class Activity extends FragmentActivity {
 	public static final String META_DATA_EXT_EXIT_INTERVAL = Activity.class.getName() + ".exit.app.interval";
 	public static final String INTENT_LOGIN_SUCCESS_TARGET = Activity.class.getName() + "login.success.target.class.name";
 	/** The default http service. */
-	private DefaultHttpService defaultHttpService;
+	private HttpServiceProgressWrapper progressHttpService;
 	
 	private Bundle bundle;
 	private ExitAppStrategy exitStrategy;
@@ -193,22 +193,22 @@ public class Activity extends FragmentActivity {
 	 * 获取网络服务对象.
 	 * @return 网络服务对象
 	 */
-	public DefaultHttpService getDefaultHttpService() {
-		if(defaultHttpService==null){
+	public HttpServiceProgressWrapper getProgressHttpService() {
+		if(progressHttpService==null){
 			ProgressTitleHandler handler = new ProgressTitleHandler();
-			defaultHttpService = getDefaultHttpService(handler);
+			progressHttpService = getProgressHttpService(handler);
 		}
-		return defaultHttpService;
+		return progressHttpService;
 	}
 	/**
 	 * 建立特定进度样式的网络服务对象。
 	 * @param progressStyle
 	 * @return
 	 */
-	public DefaultHttpService getDefaultHttpService(ProgressHandler progressStyle) {
+	public HttpServiceProgressWrapper getProgressHttpService(ProgressHandler progressStyle) {
 		Application app = (Application)getApplication();
 		HttpServiceProgressWrapper wrapper = new HttpServiceProgressWrapper(progressStyle,app.getHttpService());
-		return app.createDefaultHttpService(wrapper);
+		return wrapper;
 	}
 	/**
 	 *　获取应用全局的实体处理器对象
@@ -234,7 +234,7 @@ public class Activity extends FragmentActivity {
 	private class ProgressTitleHandler extends ProgressHandler{
 		
 		/* (non-Javadoc)
-		 * @see com.haiyisoft.mobile.android.http.HttpServiceProgressWrapper.ProgressHandler#open()
+		 * @see http.HttpServiceProgressWrapper.ProgressHandler#open()
 		 */
 		@Override
 		public void open() {
@@ -244,7 +244,7 @@ public class Activity extends FragmentActivity {
 		}
 		
 		/* (non-Javadoc)
-		 * @see com.haiyisoft.mobile.android.http.HttpServiceProgressWrapper.ProgressHandler#close()
+		 * @see http.HttpServiceProgressWrapper.ProgressHandler#close()
 		 */
 		@Override
 		public void close() {

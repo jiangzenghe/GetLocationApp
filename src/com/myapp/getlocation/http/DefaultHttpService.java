@@ -228,36 +228,6 @@ public class DefaultHttpService implements HttpService {
 		callService(request, handler);
 	}
 	
-	@Override
-	public int downFile(String urlStr, String path, String fileName, HttpServiceHandler handler) {
-        InputStream inputStream = null;
-        try {
-            FileUtil fileUtil = new FileUtil();
-
-            if (fileUtil.isFileExist(path + fileName)) {
-                return 1;
-            } else {
-                inputStream = getInputStreamFromURL(urlStr);
-                File resultFile = fileUtil.write2SDFromInput(path, fileName, inputStream);
-                if (resultFile == null) {
-                    return -1;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return -1;
-        } finally {
-            try {
-                if (inputStream != null)
-                    inputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                return -1;
-            }
-        }
-        return 0;
-    }
-	
 	/**
      * 根据URL得到输入流
      *

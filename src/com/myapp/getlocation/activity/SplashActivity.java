@@ -1,6 +1,9 @@
 package com.myapp.getlocation.activity;
 
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.http.HttpResponse;
@@ -14,10 +17,14 @@ import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.j256.ormlite.dao.Dao;
+import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.R;
+import com.myapp.getlocation.db.ScenicDataInitHelper;
+import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.http.HttpServiceHandler;
 import com.myapp.getlocation.http.HttpServiceProgressWrapper.ProgressDialogHandler;
-import com.myapp.getlocation.util.Util;
+import com.myapp.getlocation.util.FileUtil;
 
 /**
  *该类是启动Activity 在该类中应在意图对象中附加相关信息标志
@@ -27,34 +34,58 @@ import com.myapp.getlocation.util.Util;
 public class SplashActivity extends Activity {
 	private static final String TAG = SplashActivity.class.getSimpleName();
 	private static final String APP_TARGET_ACTIVITY = SplashActivity.class.getName()+".app.target.activity";
-	private static final String WAITING_TIME = SplashActivity.class.getName()+".waiting.time";//单位毫秒
 	
 	private long sleepTime;
 	private long interval;
-	private AutoInit initer;
+	private ScenicDataInitHelper dataInitHelper;
 	
 	public SplashActivity() {
 		setSleepTime(3000);
 	}
 	
-	private class DownFileHandler implements HttpServiceHandler {
+	private class DownAllScenicFileHandler implements HttpServiceHandler {
 
+		/**
+		 * 在服务准备阶段，获取文件
+		 */
 		@Override
 		public void onHttpServicePrepare(HttpResponse response) {
-			// TODO Auto-generated method stub
+			if (response == null) {
+				return ;
+			}
 			
+			InputStream inputStream = null;
+			try {
+				inputStream = response.getEntity().getContent();
+				FileUtil fileUtil = new FileUtil();
+				File resultFile = fileUtil.write2SDFromInput(Constants.SCENIC_ROUTER_FILE_PATH, 
+    					Constants.SCENIC + Constants.ALL_SCENIC_ZIP, inputStream);
+				if (resultFile == null) {
+					Toast.makeText(SplashActivity.this, "文件下载未成功", Toast.LENGTH_SHORT).show();
+                }
+			} catch (IOException e) {
+				
+			} catch (Exception e) {
+				
+			} finally {
+				try {
+					if (inputStream != null)
+						inputStream.close();
+				} catch (Exception e2) {
+					
+				}
+			}
 		}
 
 		@Override
 		public void onHttpServiceFinished(HttpResponse response) {
-			// TODO Auto-generated method stub
-			Toast.makeText(SplashActivity.this, "finish", Toast.LENGTH_SHORT).show();
+			dataInitHelper.downAndParseData();
+			sleep();
 		}
 
 		@Override
 		public void onHttpServiceError(Exception e) {
-			// TODO Auto-generated method stub
-			Toast.makeText(SplashActivity.this, "error", Toast.LENGTH_SHORT).show();
+			Toast.makeText(SplashActivity.this, "调用远程服务失败", Toast.LENGTH_SHORT).show();
 		}
 		
 	}
@@ -72,29 +103,28 @@ public class SplashActivity extends Activity {
 			layout.setBackgroundResource(resId);
 		}
 		
+		dataInitHelper = new ScenicDataInitHelper(SplashActivity.this);
+		dataInitHelper.onCreate();
+		
 		// 远程连接时，使用进度对话框
 		ProgressDialog defaultDialog = new ProgressDialog(this);
-		defaultDialog
-				.setMessage("等待中");
+		defaultDialog.setMessage("等待中");
 		ProgressDialogHandler handler = new ProgressDialogHandler(
 				defaultDialog);
-		DownFileHandler downHander = new DownFileHandler();
+		DownAllScenicFileHandler downHander = new DownAllScenicFileHandler();
 		
 		try {
-			this.getDefaultHttpService(handler).callPostService("allScenicScenicAreaAction.action", downHander);
+			this.getProgressHttpService(handler).callPostService(Constants.API_ALL_SCENIC_DOWNLOAD, downHander);
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-//		initer = new AutoInit(this);
-//		initer.start();
 		
 	}
 	
 	@Override
 	protected void onResume() {
 		super.onResume();
-//		sleep();
 	}
 	/**
 	 * 
@@ -119,11 +149,11 @@ public class SplashActivity extends Activity {
 			new Thread(){
 				@Override
 				public void run() {
-					try {
-						Thread.sleep(getSleepTime() - interval);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+//					try {
+//						Thread.sleep(getSleepTime() - interval);
+//					} catch (InterruptedException e) {
+//						e.printStackTrace();
+//					}
 					Intent intent = null;
 					try {
 						intent = makeTargetIntent();
@@ -160,21 +190,7 @@ public class SplashActivity extends Activity {
 		Intent intent = new Intent(SplashActivity.this, targetClass);
 		return intent;
 	}
-	
-	// 读取在Splash标签中配置的Meta_Data属性
-	public Bundle getMetaDataBundle() {
-		Bundle bundle = new Bundle();
-		bundle = Util.getActivityMetaDataBundle(getPackageManager(), getComponentName());
-		return bundle;
-	}
-	
-	public String getMetaDataString(String key, String defValue) {
-		if (getMetaDataBundle() != null && getMetaDataBundle().containsKey(key)) {
-			return getMetaDataBundle().getString(key);
-		}
-		return defValue;
-	}
-	
+
 	/**
 	 * 返回等待线程等待的时间，单位毫秒。
 	 * @return

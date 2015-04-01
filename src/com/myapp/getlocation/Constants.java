@@ -17,15 +17,12 @@ public class Constants {
     public static final String SCENIC_ROUTER_FILE_PATH = "imyuu/";
     public static final String SCENIC_IMAGE_FILE_PATH = Environment.getExternalStorageDirectory() + "/imyuu/scenic/";
 
-    public static final String API_ALL_SCENIC_DOWNLOAD = "http://www.imyuu.com/trip/allScenicScenicAreaAction.action";
-    public static final String API_SINGLE_SCENIC_DOWNLOAD = "http://www.imyuu.com/trip/oneScenicScenicAreaAction.action?scenicId=";
-    public static final String API_SCENIC_RECOMMEND_DOWNLOAD = "http://www.imyuu.com/trip/allscenicRecommendScenicAreaAction.action";
-    public static final String API_USER_SIGN = "http://www.imyuu.com/trip/insertFromAPPRegRegisterAccountAction.action";
-    public static final String API_USER_UPDATE = "http://www.imyuu.com/trip/updateFromAPPRegRegisterAccountAction.action";
+    public static final String API_ALL_SCENIC_DOWNLOAD = "trip/allScenicScenicAreaAction.action";
+    public static final String API_SINGLE_SCENIC_DOWNLOAD = "trip/oneScenicScenicAreaAction.action?scenicId=";
 //    public static final String API_SPOT_SUBMIT = "http://192.168.1.114:8000/WebTest/jieshou";
 //    public static final String API_SECTION_SUBMIT = "http://www.imyuu.com/trip/loginInfoFromAPPRegRegisterAccountAction.action";
-    public static final String API_SPOT_SUBMIT = "http://imyuu.com/IUURestful/restful/collection/uploadScenicSpots";
-    public static final String API_SECTION_SUBMIT = "http://imyuu.com/IUURestful/restful/collection/uploadScenicLines";
+    public static final String API_SPOT_SUBMIT = "IUURestful/restful/collection/uploadScenicSpots";
+    public static final String API_SECTION_SUBMIT = "IUURestful/restful/collection/uploadScenicLines";
     
     public static final String SCENIC = "scenic";
     public static final String ALL_SCENIC_ZIP = ".zip";

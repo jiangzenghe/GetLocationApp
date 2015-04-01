@@ -30,7 +30,7 @@ public class Application extends android.app.Application {
 	private List<ApplicationExitListener> exitListeners;
 	private EntityHelper entityHelper;
 	private Properties fileMimeType;
-	private DefaultHttpService httpService;
+	private HttpService httpService;
 	private Bundle bundle;
 	private GsonBuilder gsonBuilder;
     
@@ -59,25 +59,6 @@ public class Application extends android.app.Application {
 		super.onCreate();
 	}
 
-	/**
-	 * 创建HttpService接口对象。
-	 * @param httpService
-	 * @return
-	 */
-	public DefaultHttpService createDefaultHttpService(DefaultHttpService httpService) {
-		DefaultHttpService defaultHttpService = 
-				new DefaultHttpService(httpService);
-		return defaultHttpService;
-	}
-	
-	/**
-	 * 创建JsonHttpService接口对象。
-	 * @return
-	 */
-	public DefaultHttpService createDefaultHttpService() {
-		return createDefaultHttpService(getHttpService());
-	}
-	
 	/**
 	 * 打开指定的SQLite数据库文件。
 	 * @param dbFile
@@ -158,11 +139,11 @@ public class Application extends android.app.Application {
 		this.entityHelper = entityHelper;
 	}
 	
-	public DefaultHttpService getHttpService() {
+	public HttpService getHttpService() {
 		return httpService;
 	}
 	
-	public void setDefaultHttpService(DefaultHttpService httpService){
+	public void setHttpService(HttpService httpService){
 		this.httpService = httpService;
 	}
 	

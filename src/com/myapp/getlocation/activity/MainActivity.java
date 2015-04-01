@@ -12,6 +12,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -40,18 +41,16 @@ import com.baidu.mapapi.model.LatLng;
 import com.capricorn.RayMenu;
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
-import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.View.InsertScenicPointLayout;
 import com.myapp.getlocation.View.ScenicPointListView;
 import com.myapp.getlocation.View.ScenicSectionPointView;
+import com.myapp.getlocation.db.ScenicDataInitHelper;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.ScenicLineSectionModel;
 import com.myapp.getlocation.entity.ScenicModel;
-import com.myapp.getlocation.entity.ScenicSpotModel;
 import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
-import com.myapp.getlocation.util.HttpUtil;
 
 public class MainActivity extends Activity {
 
@@ -67,8 +66,6 @@ public class MainActivity extends Activity {
 	private Marker mMarker;
 	private InfoWindow mInfoWindow;
 	
-	private ArrayList<ScenicSpotModel> listScenicPoints;
-	private ArrayList<ScenicModel> listScenics;
 	private SectionPointsModel insertSection;
 	//
 	BitmapDescriptor bdLocation = BitmapDescriptorFactory
@@ -77,11 +74,10 @@ public class MainActivity extends Activity {
 	private LocationClient mLocClient;
 	private MyLocationListenner myListener = new MyLocationListenner();
 	
-	private Dao<ScenicModel, Integer> daoScenics;
-	private Dao<ScenicSpotModel, Integer> daoSpot;
-	private Dao<ScenicLineSectionModel, Integer> daoSection;
-	private Dao<SpotPointsModel, Integer> daoPoints;
+	private Dao<SpotPointsModel, Integer> daoSpotPoints;
 	private Dao<SectionPointsModel, Integer> daoSectionPoints;
+	private ArrayList<ScenicModel> listScenics;
+	private ScenicDataInitHelper dataInitHelper;
 	
 	private Points initPoint;//动态线的第一个点
 	@Override
@@ -140,13 +136,17 @@ public class MainActivity extends Activity {
 //		mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
 //				mCurrentMode, true, null));
 		
-		listScenicPoints = new ArrayList<ScenicSpotModel>();
-		listScenics = new ArrayList<ScenicModel>();
-//		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
-//		dataInitHelper.setListScenicPoints(listScenicPoints);
-//		dataInitHelper.setListScenics(listScenics);
-//		dataInitHelper.onCreate();
+		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
+		dataInitHelper.onCreate();
+		try {
+			daoSpotPoints = getEntityHelper().getDao(SpotPointsModel.class);
+			daoSectionPoints = getEntityHelper().getDao(SectionPointsModel.class);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		listScenics = dataInitHelper.searchScenicsData();
 		
+		Log.e("Main oncreate", "Main oncreate");
 		//
 		mLocClient = new LocationClient(this);
 		mLocClient.registerLocationListener(myListener);
@@ -179,17 +179,15 @@ public class MainActivity extends Activity {
 		
 		mBaiduMap.setOnMarkerClickListener(new OnMarkerClickListener() {
 			public boolean onMarkerClick(final Marker marker) {
-				Toast.makeText(MainActivity.this, "click", Toast.LENGTH_SHORT).show();
+				Toast.makeText(MainActivity.this, "添加景点数据", Toast.LENGTH_SHORT).show();
 				
 				InsertScenicPointLayout layout = new InsertScenicPointLayout(MainActivity.this);
 				LatLng ll = marker.getPosition();
 				layout.setLatLng(ll);
 				layout.setmBaiduMap(mBaiduMap);
-				if(daoSpot != null && daoPoints != null) {
-					layout.setDao(daoSpot);
-					layout.setDaoPoints(daoPoints);
+				if(daoSpotPoints != null) {
+					layout.setDaoSpotPoints(daoSpotPoints);
 				}
-				layout.setListScenicPoints(listScenicPoints);
 				mInfoWindow = new InfoWindow(layout, ll, 0);
 				mBaiduMap.showInfoWindow(mInfoWindow);
 				return true;
@@ -235,14 +233,8 @@ public class MainActivity extends Activity {
 	
 	private void functionList(int position) {
 		if(position == 0) {
-			final ArrayList<ScenicLineSectionModel> listPoints = new ArrayList<ScenicLineSectionModel>();
-			if(daoSection != null) {
-				CloseableIterator<ScenicLineSectionModel> iterator = daoSection.iterator();
-				
-				while (iterator.hasNext()) {
-					ScenicLineSectionModel entity = iterator.next();
-					listPoints.add(entity);
-				}
+			final ArrayList<ScenicLineSectionModel> listPoints = dataInitHelper.searchSectionsData();
+			if(listPoints.size() != 0) {
 				final String[] items = new String[listPoints.size()];
 				for(ScenicLineSectionModel each:listPoints) {
 					items[listPoints.indexOf(each)] = each.getScenicLinename()+":"+each.getAspotName()+"-"+each.getBspotName();
@@ -286,8 +278,8 @@ public class MainActivity extends Activity {
 			
 		} else if(position ==1) {
 			final ArrayList<SpotPointsModel> listSpotPoints = new ArrayList<SpotPointsModel>();
-			if(daoPoints != null) {
-				CloseableIterator<SpotPointsModel> iterator = daoPoints.iterator();
+			if(daoSpotPoints != null) {
+				CloseableIterator<SpotPointsModel> iterator = daoSpotPoints.iterator();
 				
 				while (iterator.hasNext()) {
 					SpotPointsModel entity = iterator.next();
@@ -304,15 +296,16 @@ public class MainActivity extends Activity {
 				public void onClick(DialogInterface dialog, int which) {
 					String data = converToSpotJson(listSpotPoints);
 					if (data.equals("")) return;
-					int result = HttpUtil.doPost(Constants.API_SPOT_SUBMIT, data);
+//					int result = HttpUtil.doPost(Constants.API_SPOT_SUBMIT, data);
+					int result = 0;
 					if(result == 0) {
 						Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT).show();
 					} else {
-						if(daoPoints != null) {
+						if(daoSpotPoints != null) {
 							try {
 								for(int i=0;i<listSpotPoints.size();i++){
 									listSpotPoints.get(i).setSubmited(true);
-									daoPoints.createOrUpdate(listSpotPoints.get(i));
+									daoSpotPoints.createOrUpdate(listSpotPoints.get(i));
 								}
 								Toast.makeText(MainActivity.this, "提交成功", Toast.LENGTH_SHORT).show();
 							} catch (SQLException e) {
@@ -351,11 +344,12 @@ public class MainActivity extends Activity {
 				public void onClick(DialogInterface dialog, int which) {
 					String data = converToSectionJson(listSectionPoints);
 					if (data.equals("")) return;
-					int result = HttpUtil.doPost(Constants.API_SECTION_SUBMIT, data);
+//					int result = HttpUtil.doPost(Constants.API_SECTION_SUBMIT, data);
+					int result = 0;
 					if(result == 0) {
 						Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT).show();
 					} else {
-						if(daoPoints != null) {
+						if(daoSpotPoints != null) {
 							try {
 								for(int i=0;i<listSectionPoints.size();i++){
 									listSectionPoints.get(i).setSubmited(true);
@@ -477,7 +471,7 @@ public class MainActivity extends Activity {
  					String city = location.getCity().substring(0, location.getCity().length()-1);
  					String district = location.getDistrict().substring(0, location.getCity().length()-1);
  					final ArrayList<ScenicModel> lists = searchEnableScenics(city, district);
- 					if(lists.size() >0 ) {
+ 					if(lists.size() > 0 ) {
 						final String[] items = new String[lists.size()];
 						for(ScenicModel each:lists) {
 							items[lists.indexOf(each)] = each.getScenicName();
@@ -488,7 +482,7 @@ public class MainActivity extends Activity {
 							
 							@Override
 							public void onClick(DialogInterface dialog, int which) {
-//								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
+								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
 							}
 						})
 						.create();
@@ -604,55 +598,6 @@ public class MainActivity extends Activity {
 			insertSection = null;
 		}
 
-	}
-	
-	public Dao<ScenicSpotModel, Integer> getDaoSpot() {
-		return daoSpot;
-	}
-
-	public void setDaoSpot(Dao<ScenicSpotModel, Integer> daoSpot) {
-		this.daoSpot = daoSpot;
-	}
-
-	public Dao<ScenicModel, Integer> getDaoScenics() {
-		return daoScenics;
-	}
-
-	public Dao<SpotPointsModel, Integer> getDaoPoints() {
-		return daoPoints;
-	}
-
-	public void setDaoPoints(Dao<SpotPointsModel, Integer> daoPoints) {
-		this.daoPoints = daoPoints;
-	}
-
-	public void setDaoScenics(Dao<ScenicModel, Integer> daoScenics) {
-		this.daoScenics = daoScenics;
-	}
-
-	public Dao<SectionPointsModel, Integer> getDaoSectionPoints() {
-		return daoSectionPoints;
-	}
-
-	public void setDaoSectionPoints(
-			Dao<SectionPointsModel, Integer> daoSectionPoints) {
-		this.daoSectionPoints = daoSectionPoints;
-	}
-
-	public Dao<ScenicLineSectionModel, Integer> getDaoSection() {
-		return daoSection;
-	}
-
-	public void setDaoSection(Dao<ScenicLineSectionModel, Integer> daoSection) {
-		this.daoSection = daoSection;
-	}
-
-	public ArrayList<ScenicSpotModel> getListScenicPoints() {
-		return listScenicPoints;
-	}
-
-	public void setListScenicPoints(ArrayList<ScenicSpotModel> listScenicPoints) {
-		this.listScenicPoints = listScenicPoints;
 	}
 
 	public ArrayList<ScenicModel> getListScenics() {

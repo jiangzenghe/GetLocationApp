@@ -46,8 +46,6 @@ public interface HttpService {
 	
 	public void callPostService(String svcName, HttpServiceHandler handler) throws UnsupportedEncodingException;
 	
-	public int downFile(String urlStr, String path, String fileName, HttpServiceHandler handler);
-	
 	public String getBaseAddress();
 	
 	public void setBaseAddress(String baseAddress);
