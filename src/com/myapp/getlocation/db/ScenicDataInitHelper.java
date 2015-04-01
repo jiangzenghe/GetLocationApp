@@ -410,6 +410,11 @@ public class ScenicDataInitHelper {
             }
 		}
 	}
+
+	public Dao<ScenicSpotModel, Integer> getDaoSpot() {
+		return daoSpot;
+	}
+	
 }
 
 

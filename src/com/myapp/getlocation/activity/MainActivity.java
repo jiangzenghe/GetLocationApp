@@ -10,7 +10,9 @@ import org.json.JSONObject;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -41,16 +43,19 @@ import com.baidu.mapapi.model.LatLng;
 import com.capricorn.RayMenu;
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
+import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.View.InsertScenicPointLayout;
 import com.myapp.getlocation.View.ScenicPointListView;
 import com.myapp.getlocation.View.ScenicSectionPointView;
+import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.db.ScenicDataInitHelper;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.ScenicLineSectionModel;
 import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
+import com.myapp.getlocation.util.HttpUtil;
 
 public class MainActivity extends Activity {
 
@@ -80,6 +85,8 @@ public class MainActivity extends Activity {
 	private ScenicDataInitHelper dataInitHelper;
 	
 	private Points initPoint;//动态线的第一个点
+	private ProgressDialog defaultDialog;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -187,6 +194,7 @@ public class MainActivity extends Activity {
 				layout.setmBaiduMap(mBaiduMap);
 				if(daoSpotPoints != null) {
 					layout.setDaoSpotPoints(daoSpotPoints);
+					layout.setDaoSpot(dataInitHelper.getDaoSpot());
 				}
 				mInfoWindow = new InfoWindow(layout, ll, 0);
 				mBaiduMap.showInfoWindow(mInfoWindow);
@@ -237,6 +245,7 @@ public class MainActivity extends Activity {
 			if(listPoints.size() != 0) {
 				final String[] items = new String[listPoints.size()];
 				for(ScenicLineSectionModel each:listPoints) {
+					//遍历以判断是否已采集 用文字来描述
 					items[listPoints.indexOf(each)] = each.getScenicLinename()+":"+each.getAspotName()+"-"+each.getBspotName();
 				}
 				Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
@@ -246,7 +255,8 @@ public class MainActivity extends Activity {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						locFollow = true;
-						InitDynamicLine();
+						InitDynamicLine(listPoints.get(which).getAspotId(), 
+								listPoints.get(which).getBspotId());
 						insertSection = new SectionPointsModel();
 						insertSection.setAspotId(listPoints.get(which).getAspotId());
 						insertSection.setBspotId(listPoints.get(which).getBspotId());
@@ -294,26 +304,10 @@ public class MainActivity extends Activity {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					String data = converToSpotJson(listSpotPoints);
-					if (data.equals("")) return;
-//					int result = HttpUtil.doPost(Constants.API_SPOT_SUBMIT, data);
-					int result = 0;
-					if(result == 0) {
-						Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT).show();
-					} else {
-						if(daoSpotPoints != null) {
-							try {
-								for(int i=0;i<listSpotPoints.size();i++){
-									listSpotPoints.get(i).setSubmited(true);
-									daoSpotPoints.createOrUpdate(listSpotPoints.get(i));
-								}
-								Toast.makeText(MainActivity.this, "提交成功", Toast.LENGTH_SHORT).show();
-							} catch (SQLException e) {
-								Toast.makeText(MainActivity.this, "提交成功,修改提交状态出错",Toast.LENGTH_SHORT).show();
-							}
-						}
-					}
-					
+					defaultDialog = new ProgressDialog(MainActivity.this);
+					defaultDialog.setMessage("提交数据中");
+					defaultDialog.show();
+					new SubmitDataTask().execute(listSpotPoints);
 				}
 			})
 			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -342,25 +336,10 @@ public class MainActivity extends Activity {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					String data = converToSectionJson(listSectionPoints);
-					if (data.equals("")) return;
-//					int result = HttpUtil.doPost(Constants.API_SECTION_SUBMIT, data);
-					int result = 0;
-					if(result == 0) {
-						Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT).show();
-					} else {
-						if(daoSpotPoints != null) {
-							try {
-								for(int i=0;i<listSectionPoints.size();i++){
-									listSectionPoints.get(i).setSubmited(true);
-									daoSectionPoints.createOrUpdate(listSectionPoints.get(i));
-								}
-								Toast.makeText(MainActivity.this, "提交成功", Toast.LENGTH_SHORT).show();
-							} catch (SQLException e) {
-								Toast.makeText(MainActivity.this, "提交成功,修改提交状态出错",Toast.LENGTH_SHORT).show();
-							}
-						}
-					}
+					defaultDialog = new ProgressDialog(MainActivity.this);
+					defaultDialog.setMessage("等待中");
+					defaultDialog.show();
+					new SubmitLineTask().execute(listSectionPoints);
 				}
 			})
 			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -431,6 +410,96 @@ public class MainActivity extends Activity {
 		System.out.println(array.toString()); 
 		return array.toString(); 
 	} 
+	
+	class SubmitDataTask extends AsyncTask<ArrayList<SpotPointsModel>, Void, Integer> {
+		private ArrayList<SpotPointsModel> listSpotPoints;
+
+		protected Integer doInBackground(ArrayList<SpotPointsModel>... data) {
+			try {
+				listSpotPoints = data[0];
+				Application app = (Application)MainActivity.this.getApplication();
+				String baseAdd = app.getMetaDataString("framework.config.service.base.address", "");
+				int result = HttpUtil.postListByRestTemplate(
+						baseAdd + Constants.API_SPOT_SUBMIT, listSpotPoints);
+				return result;
+			} catch (Exception e) {
+				e.printStackTrace();
+				return 0;
+			}
+		}
+
+		protected void onPostExecute(Integer result) {
+			// TODO: check this.exception
+			Log.i("doInBackground", "execute result is:" + result);
+			if(defaultDialog != null) {
+				defaultDialog.cancel();
+			}
+			if (result == 0) {
+				Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT)
+						.show();
+			} else {
+				if (daoSpotPoints != null) {
+					try {
+						for (int i = 0; i < listSpotPoints.size(); i++) {
+							listSpotPoints.get(i).setSubmited(true);
+							daoSpotPoints.createOrUpdate(listSpotPoints.get(i));
+						}
+						Toast.makeText(MainActivity.this, "提交成功",
+								Toast.LENGTH_SHORT).show();
+					} catch (SQLException e) {
+						Toast.makeText(MainActivity.this, "提交成功,修改提交状态出错",
+								Toast.LENGTH_SHORT).show();
+					}
+				}
+			}
+		}
+	}
+
+	class SubmitLineTask extends AsyncTask<ArrayList<SectionPointsModel>, Void, Integer> {
+		private int result;
+		private ArrayList<SectionPointsModel> listSectionPoints = null;
+
+		protected Integer doInBackground(ArrayList<SectionPointsModel>... data) {
+			try {
+				listSectionPoints = data[0];
+				Application app = (Application)MainActivity.this.getApplication();
+				String baseAdd = app.getMetaDataString("framework.config.service.base.address", "");
+				result = HttpUtil.postByRestTemplate(
+						baseAdd + Constants.API_SECTION_SUBMIT, listSectionPoints);
+				return result;
+			} catch (Exception e) {
+				e.printStackTrace();
+				return 0;
+			}
+		}
+
+		protected void onPostExecute(Integer feed) {
+			// TODO: check this.exception
+			Log.i("doInBackground", "execute result is:" + feed);
+			if(defaultDialog != null) {
+				defaultDialog.cancel();
+			}
+			if (result == 0) {
+				Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT)
+						.show();
+			} else {
+				if (daoSectionPoints != null) {
+					try {
+						for (int i = 0; i < listSectionPoints.size(); i++) {
+							listSectionPoints.get(i).setSubmited(true);
+							daoSectionPoints.createOrUpdate(listSectionPoints
+									.get(i));
+						}
+						Toast.makeText(MainActivity.this, "提交成功",
+								Toast.LENGTH_SHORT).show();
+					} catch (SQLException e) {
+						Toast.makeText(MainActivity.this, "提交成功,修改提交状态出错",
+								Toast.LENGTH_SHORT).show();
+					}
+				}
+			}
+		}
+	}
 	
 	private void addOverlay(LatLng ll) {
 		OverlayOptions oo = new MarkerOptions().position(ll).icon(bdLocation)
@@ -520,11 +589,13 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private void InitDynamicLine() {
+	private void InitDynamicLine(String startSpotId, String endSpotId) {
 		initPoint = new Points(0.0, 0.0, 0.0);
 		MapStatusUpdate arg0 = MapStatusUpdateFactory.zoomTo(18);
 		mBaiduMap.setMapStatus(arg0);
 		mBaiduMap.clear();
+		
+		//起始点画好
 	}
 	
 	private void DrawDynamicLine(Points point) {
@@ -542,7 +613,7 @@ public class MainActivity extends Activity {
 			initPoint.setAbsoluteLatitude(point.getAbsoluteLatitude());
 			initPoint.setAbsoluteLongitude(point.getAbsoluteLongitude());
 		}
-		//构建用户绘制多边形的Option对象  
+		//构建用于绘制多边形的Option对象  
 		if(pts.size() >=2) {
 			OverlayOptions polygonOption = new PolylineOptions()  
 			.width(8)

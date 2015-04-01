@@ -25,6 +25,7 @@ import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.http.HttpServiceHandler;
 import com.myapp.getlocation.http.HttpServiceProgressWrapper.ProgressDialogHandler;
 import com.myapp.getlocation.util.FileUtil;
+import com.myapp.getlocation.util.HttpUtil;
 
 /**
  *该类是启动Activity 在该类中应在意图对象中附加相关信息标志
@@ -101,6 +102,12 @@ public class SplashActivity extends Activity {
 		int resId = R.drawable.splash;
 		if (resId != 0) {
 			layout.setBackgroundResource(resId);
+		}
+		
+		boolean wifiEnable = HttpUtil.isNetworkAvailable(SplashActivity.this);
+		if(!wifiEnable) {
+			Toast.makeText(SplashActivity.this, "下载大文件，请务必打开wifi以节省流量", Toast.LENGTH_SHORT).show();
+			return;
 		}
 		
 		dataInitHelper = new ScenicDataInitHelper(SplashActivity.this);
