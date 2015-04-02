@@ -12,6 +12,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -30,6 +31,7 @@ import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BaiduMap.OnMarkerClickListener;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.DotOptions;
 import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
@@ -245,8 +247,18 @@ public class MainActivity extends Activity {
 			if(listPoints.size() != 0) {
 				final String[] items = new String[listPoints.size()];
 				for(ScenicLineSectionModel each:listPoints) {
-					//遍历以判断是否已采集 用文字来描述
+					
 					items[listPoints.indexOf(each)] = each.getScenicLinename()+":"+each.getAspotName()+"-"+each.getBspotName();
+					//遍历以判断是否已采集 用文字来描述
+					try {
+						List<SectionPointsModel> tempModel=daoSectionPoints.queryForEq("linesectionId", each.getLinesectionId());
+						if(tempModel.size() > 0) {
+							items[listPoints.indexOf(each)] += "  ------  已采集";
+						}
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
 				.setTitle("收集路段内含点列表")
@@ -255,7 +267,7 @@ public class MainActivity extends Activity {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						locFollow = true;
-						InitDynamicLine(listPoints.get(which).getAspotId(), 
+						initDynamicLine(listPoints.get(which).getAspotId(), 
 								listPoints.get(which).getBspotId());
 						insertSection = new SectionPointsModel();
 						insertSection.setAspotId(listPoints.get(which).getAspotId());
@@ -577,7 +589,7 @@ public class MainActivity extends Activity {
 				double latitude = location.getLatitude();
 				double altitude = location.getAltitude();
 				Points point = new Points(longitude, latitude, altitude);
-				DrawDynamicLine(point);
+				drawDynamicLine(point);
 				
 				insertSection.getSectionPoints().add(point);
 				insertSection.setPointsNum(insertSection.getPointsNum() + 1);
@@ -589,16 +601,43 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	private void InitDynamicLine(String startSpotId, String endSpotId) {
+	private void initDynamicLine(String startSpotId, String endSpotId) {
 		initPoint = new Points(0.0, 0.0, 0.0);
 		MapStatusUpdate arg0 = MapStatusUpdateFactory.zoomTo(18);
 		mBaiduMap.setMapStatus(arg0);
 		mBaiduMap.clear();
 		
-		//起始点画好
+		try {
+			List<SpotPointsModel> tempModel = daoSpotPoints.queryForEq("spotId", startSpotId);
+			//起点画好
+			if(tempModel.size()>0) {
+				drawSinglePoint(tempModel.get(0).getSpotPoints());
+			}
+			tempModel = daoSpotPoints.queryForEq("spotId", endSpotId);
+			//始点画好
+			if(tempModel.size()>0) {
+				drawSinglePoint(tempModel.get(0).getSpotPoints());
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
-	private void DrawDynamicLine(Points point) {
+	private void drawSinglePoint(ArrayList<Points> points) {
+		for(Points each : points) {
+			LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());
+			//构建用户绘制多边形的Option对象  
+			OverlayOptions polygonOption = new DotOptions()  
+			.center(point)
+			.color(Color.parseColor("#FFF000"));
+			//在地图上添加Option，用于显示  
+			mBaiduMap.addOverlay(polygonOption);
+		}
+	}
+	
+	private void drawDynamicLine(Points point) {
 		List<LatLng> pts = new ArrayList<LatLng>(); 
 		LatLng arg0 = new LatLng(initPoint.getAbsoluteLatitude(), 
 				initPoint.getAbsoluteLongitude());

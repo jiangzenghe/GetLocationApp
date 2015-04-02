@@ -24,6 +24,7 @@ import com.myapp.getlocation.R;
 import com.myapp.getlocation.activity.Activity;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.ScenicSpotModel;
+import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
 
 public class InsertScenicPointLayout extends LinearLayout {
@@ -139,6 +140,16 @@ public class InsertScenicPointLayout extends LinearLayout {
 					final String[] items = new String[listScenicSpots.size()];
 					for(ScenicSpotModel each:listScenicSpots) {
 						items[listScenicSpots.indexOf(each)] = each.getScenicspotName();
+						//遍历以判断是否已采集 用文字来描述
+						try {
+							List<SpotPointsModel> tempModel=daoSpotPoints.queryForEq("spotId", each.getSpotId());
+							if(tempModel.size() > 0) {
+								items[listScenicSpots.indexOf(each)] += "  ------  已采集";
+							}
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 					
 					Dialog alertDialog = new AlertDialog.Builder(context)

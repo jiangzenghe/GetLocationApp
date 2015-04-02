@@ -116,9 +116,8 @@ public class ScenicPointListView extends LinearLayout {
 			TextView txtViewName = (TextView) view.findViewById(R.id.txtScenicPoint);
 			TextView txtViewtype = (TextView) view.findViewById(R.id.txtScenicPointtype);
 			TextView txtViewNum = (TextView) view.findViewById(R.id.point_num);
-			CheckBox ckbSubmit = (CheckBox) view.findViewById(R.id.checkBox_submit);
+			TextView txtSubmit = (TextView) view.findViewById(R.id.sub_txt);
 			ImageView delImage = (ImageView) view.findViewById(R.id.delImage);
-			ckbSubmit.setEnabled(false);
 			
 			/*
 			 * 声明的类改为ClassAttachmentImpl
@@ -182,7 +181,8 @@ public class ScenicPointListView extends LinearLayout {
 				txtViewId.setText(bean.getSpotId());
 				txtViewName.setText(bean.getScenicspotName());
 				txtViewNum.setText(bean.getPointsNum()+"");
-				ckbSubmit.setChecked(bean.isSubmited());
+				String subString = bean.isSubmited()?"已提交":"未提交";
+				txtSubmit.setText(subString);
 				
 			} catch (Exception e) {
 				Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
