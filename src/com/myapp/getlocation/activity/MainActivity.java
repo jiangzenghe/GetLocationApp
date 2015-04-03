@@ -431,6 +431,7 @@ public class MainActivity extends Activity {
 				listSpotPoints = data[0];
 				Application app = (Application)MainActivity.this.getApplication();
 				String baseAdd = app.getMetaDataString("framework.config.service.base.address", "");
+				baseAdd = "http://www.imyuu.com:8080/";
 				int result = HttpUtil.postListByRestTemplate(
 						baseAdd + Constants.API_SPOT_SUBMIT, listSpotPoints);
 				return result;
@@ -476,6 +477,7 @@ public class MainActivity extends Activity {
 				listSectionPoints = data[0];
 				Application app = (Application)MainActivity.this.getApplication();
 				String baseAdd = app.getMetaDataString("framework.config.service.base.address", "");
+				baseAdd = "http://www.imyuu.com:8080/";
 				result = HttpUtil.postByRestTemplate(
 						baseAdd + Constants.API_SECTION_SUBMIT, listSectionPoints);
 				return result;
