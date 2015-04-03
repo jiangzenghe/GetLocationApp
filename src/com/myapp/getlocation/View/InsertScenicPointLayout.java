@@ -112,16 +112,6 @@ public class InsertScenicPointLayout extends LinearLayout {
 						scenicSpotIdTxt.setText(listScenicSpots.get(0).getSpotId());
 					}
 				})
-				.setPositiveButton("确认", new DialogInterface.OnClickListener() {
-					
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						spotTypeTxt.setText(items[which]);
-						searchSpotsData();
-						scenicSpotTxt.setText(listScenicSpots.get(0).getScenicspotName());
-						scenicSpotIdTxt.setText(listScenicSpots.get(0).getSpotId());
-					}
-				})
 				.setNegativeButton("取消", new DialogInterface.OnClickListener() {
 					
 					@Override
@@ -155,14 +145,6 @@ public class InsertScenicPointLayout extends LinearLayout {
 					Dialog alertDialog = new AlertDialog.Builder(context)
 					.setTitle("景点列表")
 					.setItems(items, new DialogInterface.OnClickListener() {
-						
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							scenicSpotTxt.setText(items[which]);
-							scenicSpotIdTxt.setText(listScenicSpots.get(which).getSpotId());
-						}
-					})
-					.setPositiveButton("确认", new DialogInterface.OnClickListener() {
 						
 						@Override
 						public void onClick(DialogInterface dialog, int which) {

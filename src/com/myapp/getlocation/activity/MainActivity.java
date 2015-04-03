@@ -41,6 +41,7 @@ import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolylineOptions;
+import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.capricorn.RayMenu;
 import com.j256.ormlite.dao.CloseableIterator;
@@ -413,7 +414,7 @@ public class MainActivity extends Activity {
 						arrayPoints.put(objPoint);
 					}
 					obj.put("spotPoints", arrayPoints);
-				} catch (JSONException e) { // TODO Auto-generated catch block 
+				} catch (JSONException e) { 
 					e.printStackTrace(); 
 				} 
 				array.put(obj); 
@@ -613,12 +614,14 @@ public class MainActivity extends Activity {
 			List<SpotPointsModel> tempModel = daoSpotPoints.queryForEq("spotId", startSpotId);
 			//起点画好
 			if(tempModel.size()>0) {
-				drawSinglePoint(tempModel.get(0).getSpotPoints());
+				drawSinglePoint(tempModel.get(0).getSpotPoints(),
+						tempModel.get(0).getScenicspotName());
 			}
 			tempModel = daoSpotPoints.queryForEq("spotId", endSpotId);
 			//始点画好
 			if(tempModel.size()>0) {
-				drawSinglePoint(tempModel.get(0).getSpotPoints());
+				drawSinglePoint(tempModel.get(0).getSpotPoints(),
+						tempModel.get(0).getScenicspotName());
 			}
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -627,15 +630,30 @@ public class MainActivity extends Activity {
 		
 	}
 	
-	private void drawSinglePoint(ArrayList<Points> points) {
-		for(Points each : points) {
-			LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());
-			//构建用户绘制多边形的Option对象  
-			OverlayOptions polygonOption = new DotOptions()  
+	private void drawSinglePoint(ArrayList<Points> points, String name) {
+		double sumLatitude = 0.0;
+		double sumLongitude = 0.0;
+		if(points.size() > 0) {
+			for(Points each : points) {
+				sumLatitude += each.getAbsoluteLatitude();
+				sumLongitude += each.getAbsoluteLongitude();
+			}
+			LatLng point = new LatLng(sumLatitude/points.size(), 
+					sumLongitude/points.size());
+			OverlayOptions textOption = new TextOptions()  
+		    .bgColor(0xAAFFFF00)  
+		    .fontSize(24)  
+		    .fontColor(0xFFFF00FF)  
+		    .text(name)
+		    .position(point);  
+			//在地图上添加该文字对象并显示  
+			mBaiduMap.addOverlay(textOption);
+			//构建用于绘制point的Option对象  
+			OverlayOptions dotOption = new DotOptions()  
 			.center(point)
 			.color(Color.parseColor("#FFF000"));
 			//在地图上添加Option，用于显示  
-			mBaiduMap.addOverlay(polygonOption);
+			mBaiduMap.addOverlay(dotOption);
 		}
 	}
 	

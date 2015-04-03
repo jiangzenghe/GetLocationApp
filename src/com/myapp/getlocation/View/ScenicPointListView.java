@@ -133,12 +133,12 @@ public class ScenicPointListView extends LinearLayout {
 						mBaiduMap.clear();
 						for(Points each : points) {
 							LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());
-							//构建用户绘制多边形的Option对象  
-							OverlayOptions polygonOption = new DotOptions()  
+							//构建用于绘制point的Option对象  
+							OverlayOptions dotOption = new DotOptions()  
 							.center(point)
 							.color(Color.parseColor("#FF0000"));
 							//在地图上添加Option，用于显示  
-							mBaiduMap.addOverlay(polygonOption);
+							mBaiduMap.addOverlay(dotOption);
 						}
 						alertDialog.dismiss();
 						return true;//

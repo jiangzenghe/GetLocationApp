@@ -149,7 +149,7 @@ public class ScenicSectionPointView extends LinearLayout {
 						}
 //						pts.add(new LatLng(points.get(0).getAbsoluteLatitude(), points.get(0).getAbsoluteLongitude()+0.1));//test
 						if(pts.size() >=2 && pts.size() <10000) {
-							//构建用户绘制多边形的Option对象  
+							//构建用于绘制多边形的Option对象  
 							OverlayOptions polygonOption = new PolylineOptions()  
 							.width(8)
 							.color(0xAAFF0000)
