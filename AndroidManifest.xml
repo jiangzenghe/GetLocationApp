@@ -61,7 +61,8 @@
         
         <meta-data
             android:name="framework.config.database.file.path"
-            android:value="/data/data/com.myapp.getlocation/scenic.db" />
+            android:value="/mnt/sdcard/imyuu/scenic.db" />
+        <!-- android:value="/data/data/com.myapp.getlocation/scenic.db" -->
         <meta-data
             android:name="framework.config.properties.app.config"
             android:resource="@raw/appinitconfig" />

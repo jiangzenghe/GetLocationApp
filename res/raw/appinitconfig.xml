@@ -1,8 +1,4 @@
 <app-init-config>
-    <json-adapter-config>
-		<json-adapter class="com.haiyisoft.mobile.android.common.UserView" 
-				adapter="com.haiyisoft.mobile.android.json.adapter.JsonUserViewAdapter"/>
-	</json-adapter-config>
 	<sqlite-config>
 	    <entity class="com.myapp.getlocation.entity.ScenicModel"/>
 		<entity class="com.myapp.getlocation.entity.ScenicSpotModel"/>
