@@ -105,10 +105,10 @@ public class SplashActivity extends Activity {
 		}
 		
 		boolean wifiEnable = HttpUtil.isNetworkAvailable(SplashActivity.this);
-		if(!wifiEnable) {
-			Toast.makeText(SplashActivity.this, "下载大文件，请务必打开wifi以节省流量", Toast.LENGTH_SHORT).show();
-			return;
-		}
+//		if(!wifiEnable) {
+//			Toast.makeText(SplashActivity.this, "下载大文件，请务必打开wifi以节省流量", Toast.LENGTH_SHORT).show();
+//			return;
+//		}
 		
 		dataInitHelper = new ScenicDataInitHelper(SplashActivity.this);
 		dataInitHelper.onCreate();
@@ -119,13 +119,13 @@ public class SplashActivity extends Activity {
 		ProgressDialogHandler handler = new ProgressDialogHandler(
 				defaultDialog);
 		DownAllScenicFileHandler downHander = new DownAllScenicFileHandler();
-		
-		try {
-			this.getProgressHttpService(handler).callPostService(Constants.API_ALL_SCENIC_DOWNLOAD, downHander);
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		sleep();
+//		try {
+//			this.getProgressHttpService(handler).callPostService(Constants.API_ALL_SCENIC_DOWNLOAD, downHander);
+//		} catch (UnsupportedEncodingException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 		
 	}
 	

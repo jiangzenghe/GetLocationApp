@@ -1,8 +1,11 @@
 package com.myapp.getlocation;
 
+import java.util.HashMap;
+
 import android.os.Environment;
 
 /**
+ * 
  */
 public class Constants {
     public static final String SHAREDPREFERENCES_NAME = "Travel";
@@ -17,12 +20,13 @@ public class Constants {
     public static final String SCENIC_ROUTER_FILE_PATH = "imyuu/";
     public static final String SCENIC_IMAGE_FILE_PATH = Environment.getExternalStorageDirectory() + "/imyuu/scenic/";
 
-    public static final String API_ALL_SCENIC_DOWNLOAD = "trip/allScenicScenicAreaAction.action";
-    public static final String API_SINGLE_SCENIC_DOWNLOAD = "trip/oneScenicScenicAreaAction.action?scenicId=";
+    public static final String API_ALL_SCENIC_DOWNLOAD = "/trip/allScenicScenicAreaAction.action";
+//    public static final String API_SINGLE_SCENIC_DOWNLOAD = "/trip/oneScenicScenicAreaAction.action?scenicId=";
+    public static final String API_SINGLE_SCENIC_DOWNLOAD = ":8080/IUURestful/collection/";
 //    public static final String API_SPOT_SUBMIT = "http://192.168.1.114:8000/WebTest/jieshou";
 //    public static final String API_SECTION_SUBMIT = "http://www.imyuu.com/trip/loginInfoFromAPPRegRegisterAccountAction.action";
-    public static final String API_SPOT_SUBMIT = "IUURestful/collection/upload";
-    public static final String API_SECTION_SUBMIT = "IUURestful/collection/uploadScenicLines";
+    public static final String API_SPOT_SUBMIT = ":8080/IUURestful/collection/upload";
+    public static final String API_SECTION_SUBMIT = ":8080/IUURestful/collection/uploadScenicLines";
     
     public static final String SCENIC = "scenic";
     public static final String ALL_SCENIC_ZIP = ".zip";
@@ -33,4 +37,8 @@ public class Constants {
     public static final int IMAGE_REQUEST_CODE = 0;
     public static final int CAMERA_REQUEST_CODE = 1;
     public static final int DEFAULT_REQUEST_CODE = 2;
+    
+    public static final HashMap<String, String> scenicspotMarkertypeMap = new HashMap<String, String>();
+    
+    //旋转卡壳法 求质心
 }

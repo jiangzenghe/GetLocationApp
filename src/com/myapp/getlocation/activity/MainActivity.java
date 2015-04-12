@@ -2,11 +2,8 @@ package com.myapp.getlocation.activity;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -63,7 +60,8 @@ import com.myapp.getlocation.util.HttpUtil;
 public class MainActivity extends Activity {
 
 	private static final int[] ITEM_DRAWABLES = {
-		R.drawable.composer_place, R.drawable.composer_thought, R.drawable.composer_with };
+		R.drawable.composer_place, R.drawable.composer_thought, R.drawable.composer_with
+		,R.drawable.composer_line};
 	
 	private ImageView imgLoc;
 	private MapView mMapView;
@@ -110,23 +108,37 @@ public class MainActivity extends Activity {
 				@Override
 				public void onClick(View v) {
 					if(position == 0) {
-						locFollow = false;
-						mBaiduMap.setMyLocationEnabled(false);
-						imgLoc.setImageResource(R.drawable.main_location);
-						insertSectionData();
+						if(locFollow) {
+							locFollow = false;
+							mBaiduMap.setMyLocationEnabled(false);
+							imgLoc.setImageResource(R.drawable.main_location);
+							insertSectionData();
+						}
 						Toast.makeText(MainActivity.this, "收集路段内的点", Toast.LENGTH_SHORT).show();
 					} else if(position == 1) {
-						locFollow = false;
-						mBaiduMap.setMyLocationEnabled(false);
-						imgLoc.setImageResource(R.drawable.main_location);
-						insertSectionData();
+						if(locFollow) {
+							locFollow = false;
+							mBaiduMap.setMyLocationEnabled(false);
+							imgLoc.setImageResource(R.drawable.main_location);
+							insertSectionData();
+						}
 						Toast.makeText(MainActivity.this, "提交已收集的景点", Toast.LENGTH_SHORT).show();
 					} else if(position == 2) {
-						locFollow = false;
-						mBaiduMap.setMyLocationEnabled(false);
-						imgLoc.setImageResource(R.drawable.main_location);
-						insertSectionData();
+						if(locFollow) {
+							locFollow = false;
+							mBaiduMap.setMyLocationEnabled(false);
+							imgLoc.setImageResource(R.drawable.main_location);
+							insertSectionData();
+						}
 						Toast.makeText(MainActivity.this, "提交已收集的路段", Toast.LENGTH_SHORT).show();
+					} else if(position == 3) {
+						if(locFollow) {
+							locFollow = false;
+							mBaiduMap.setMyLocationEnabled(false);
+							imgLoc.setImageResource(R.drawable.main_location);
+							insertSectionData();
+						}
+						Toast.makeText(MainActivity.this, "绘制已收集的路段", Toast.LENGTH_SHORT).show();
 					}
 					functionList(position);
 				}
@@ -198,6 +210,8 @@ public class MainActivity extends Activity {
 				if(daoSpotPoints != null) {
 					layout.setDaoSpotPoints(daoSpotPoints);
 					layout.setDaoSpot(dataInitHelper.getDaoSpot());
+					layout.searchSpotType();
+					layout.initTextData();
 				}
 				mInfoWindow = new InfoWindow(layout, ll, 0);
 				mBaiduMap.showInfoWindow(mInfoWindow);
@@ -363,66 +377,79 @@ public class MainActivity extends Activity {
 			}).create();
 			sectionPointsView.setAlertDialog(alertDialog);
 			alertDialog.show();
+		} else if(position == 3) {
+			HashMap<String, String> map = searchLine();
+			if(!map.isEmpty()) {
+				final String[] items = new String[map.size()];
+				final String[] itemsValue = new String[map.size()];
+				int i = 0;
+				for(String key: map.keySet()) {
+					items[i] = key;
+					itemsValue[i] = map.get(key);
+					i++;
+				}
+				Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
+				.setTitle("绘制路段列表")
+				.setItems(itemsValue, new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						try {
+							List<SectionPointsModel> tempModel = new ArrayList<SectionPointsModel>();
+							if(items[which].equals("0")) {
+								tempModel=daoSectionPoints.queryForEq("scenicLineId", null);
+							} else {
+								tempModel=daoSectionPoints.queryForEq("scenicLineId", items[which]);
+							}
+							if(tempModel.size() > 0) {
+								for(SectionPointsModel each:tempModel) {
+									if(!items[which].equals("0")) {
+										initDynamicLine(each.getAspotId(), each.getBspotId());
+									}
+									if(each.getSectionPoints().size()>0) {
+										for(Points eachPoints:each.getSectionPoints()) {
+											drawDynamicLine(eachPoints);
+										}
+									}
+								}
+							}
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				})
+				.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+					
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+					}
+				}).create();
+				alertDialog.show();
+			} else {
+				Toast.makeText(MainActivity.this, "无路段数据", Toast.LENGTH_SHORT).show();
+			}
 		}
 	}
 	
-	public String converToSpotJson(ArrayList<SpotPointsModel> list) { 
-		JSONArray array = new JSONArray(); 
-		for (SpotPointsModel spot : list) { 
-			if(!spot.isSubmited()) {
-				JSONObject obj = new JSONObject(); 
-				try { 
-					obj.put("scenicId", spot.getScenicId()); 
-					obj.put("spotId", spot.getSpotId());
-					obj.put("spotType", spot.getSpotType());
-					JSONArray arrayPoints = new JSONArray(); 
-					for (Points point : spot.getSpotPoints()) {
-						JSONObject objPoint = new JSONObject(); 
-						objPoint.put("logitude", point.getAbsoluteLongitude());
-						objPoint.put("latitude", point.getAbsoluteLatitude());
-						objPoint.put("altitude", point.getAbsoluteAltitude());
-						arrayPoints.put(objPoint);
-					}
-					obj.put("spotPoints", arrayPoints);
-				} catch (JSONException e) { // TODO Auto-generated catch block 
-					e.printStackTrace(); 
-				} 
-				array.put(obj); 
+	//寻找Line和未加入任何Line的Section
+	public HashMap<String, String> searchLine() {
+		HashMap<String, String> result = new HashMap<String, String>();
+		if (daoSectionPoints != null) {
+			CloseableIterator<SectionPointsModel> iterator = daoSectionPoints.iterator();
+			
+			while (iterator.hasNext()) {
+				SectionPointsModel entity = iterator.next();
+				if(entity.getScenicLineId() == null) {
+					result.put("0", "其他");
+				} else if(!result.containsKey(entity.getScenicLineId())) {
+					result.put(entity.getScenicLineId(), entity.getScenicLinename());
+				}
+
 			}
-		} 
-		System.out.println(array.toString()); 
-		return array.toString(); 
-	} 
-	
-	public String converToSectionJson(ArrayList<SectionPointsModel> list) { 
-		JSONArray array = new JSONArray(); 
-		for (SectionPointsModel section : list) { 
-			if(!section.isSubmited()) {
-				JSONObject obj = new JSONObject(); 
-				try { 
-					obj.put("scenicId", section.getScenicId()); 
-					obj.put("scenicLineId", section.getScenicLineId());
-					obj.put("linesectionId", section.getLinesectionId());
-					obj.put("aspotId", section.getAspotId());
-					obj.put("bspotId", section.getBspotId());
-					JSONArray arrayPoints = new JSONArray(); 
-					for (Points point : section.getSectionPoints()) {
-						JSONObject objPoint = new JSONObject(); 
-						objPoint.put("logitude", point.getAbsoluteLongitude());
-						objPoint.put("latitude", point.getAbsoluteLatitude());
-						objPoint.put("altitude", point.getAbsoluteAltitude());
-						arrayPoints.put(objPoint);
-					}
-					obj.put("spotPoints", arrayPoints);
-				} catch (JSONException e) { 
-					e.printStackTrace(); 
-				} 
-				array.put(obj); 
-			}
-		} 
-		System.out.println(array.toString()); 
-		return array.toString(); 
-	} 
+		}
+		return result;
+	}
 	
 	class SubmitDataTask extends AsyncTask<ArrayList<SpotPointsModel>, Void, Integer> {
 		private ArrayList<SpotPointsModel> listSpotPoints;
@@ -432,7 +459,7 @@ public class MainActivity extends Activity {
 				listSpotPoints = data[0];
 				Application app = (Application)MainActivity.this.getApplication();
 				String baseAdd = app.getMetaDataString("framework.config.service.base.address", "");
-				baseAdd = "http://www.imyuu.com:8080/";
+//				baseAdd = "http://www.imyuu.com:8080/";
 				int result = HttpUtil.postListByRestTemplate(
 						baseAdd + Constants.API_SPOT_SUBMIT, listSpotPoints);
 				return result;
@@ -478,7 +505,7 @@ public class MainActivity extends Activity {
 				listSectionPoints = data[0];
 				Application app = (Application)MainActivity.this.getApplication();
 				String baseAdd = app.getMetaDataString("framework.config.service.base.address", "");
-				baseAdd = "http://www.imyuu.com:8080/";
+//				baseAdd = "http://www.imyuu.com:8080/";
 				result = HttpUtil.postByRestTemplate(
 						baseAdd + Constants.API_SECTION_SUBMIT, listSectionPoints);
 				return result;
@@ -591,6 +618,7 @@ public class MainActivity extends Activity {
 				double longitude = location.getLongitude();
 				double latitude = location.getLatitude();
 				double altitude = location.getAltitude();
+				if (longitude< 0.00001 || latitude <0.00001) return;
 				Points point = new Points(longitude, latitude, altitude);
 				drawDynamicLine(point);
 				
@@ -638,16 +666,18 @@ public class MainActivity extends Activity {
 				sumLatitude += each.getAbsoluteLatitude();
 				sumLongitude += each.getAbsoluteLongitude();
 			}
-			LatLng point = new LatLng(sumLatitude/points.size(), 
+			LatLng pointLabel = new LatLng(sumLatitude/points.size() + 0.001, 
 					sumLongitude/points.size());
 			OverlayOptions textOption = new TextOptions()  
 		    .bgColor(0xAAFFFF00)  
 		    .fontSize(24)  
 		    .fontColor(0xFFFF00FF)  
 		    .text(name)
-		    .position(point);  
+		    .position(pointLabel);  
 			//在地图上添加该文字对象并显示  
 			mBaiduMap.addOverlay(textOption);
+			LatLng point = new LatLng(sumLatitude/points.size(), 
+					sumLongitude/points.size());
 			//构建用于绘制point的Option对象  
 			OverlayOptions dotOption = new DotOptions()  
 			.center(point)

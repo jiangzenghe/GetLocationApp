@@ -24,9 +24,13 @@ import android.widget.Toast;
 
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.DotOptions;
+import com.baidu.mapapi.map.MapStatusUpdate;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.OverlayOptions;
+import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.j256.ormlite.dao.Dao;
+import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.activity.MainActivity;
 import com.myapp.getlocation.adapter.ClassAttachmentImpl;
@@ -129,9 +133,14 @@ public class ScenicPointListView extends LinearLayout {
 					
 					@Override
 					public boolean onLongClick(View v) {
-						ArrayList<Points> points = bean.getSpotPoints();
 						mBaiduMap.clear();
+						ArrayList<Points> points = bean.getSpotPoints();
+						if(points.size() == 0) return true;
+						double sumLatitude = 0.0;
+						double sumLongitude = 0.0;
 						for(Points each : points) {
+							sumLatitude += each.getAbsoluteLatitude();
+							sumLongitude += each.getAbsoluteLongitude();
 							LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());
 							//构建用于绘制point的Option对象  
 							OverlayOptions dotOption = new DotOptions()  
@@ -140,6 +149,18 @@ public class ScenicPointListView extends LinearLayout {
 							//在地图上添加Option，用于显示  
 							mBaiduMap.addOverlay(dotOption);
 						}
+						LatLng pointAvg = new LatLng(sumLatitude/points.size() + 0.001, 
+								sumLongitude/points.size());
+						OverlayOptions textOption = new TextOptions()  
+					    .bgColor(0xAAFFFF00)  
+					    .fontSize(24)  
+					    .fontColor(0xFFFF00FF)  
+					    .text(bean.getScenicspotName())
+					    .position(pointAvg);  
+						//在地图上添加该文字对象并显示  
+						mBaiduMap.addOverlay(textOption);
+						MapStatusUpdate arg0 = MapStatusUpdateFactory.newLatLng(pointAvg);
+						mBaiduMap.animateMapStatus(arg0);
 						alertDialog.dismiss();
 						return true;//
 					}
@@ -181,6 +202,7 @@ public class ScenicPointListView extends LinearLayout {
 				txtViewId.setText(bean.getSpotId());
 				txtViewName.setText(bean.getScenicspotName());
 				txtViewNum.setText(bean.getPointsNum()+"");
+				txtViewtype.setText(Constants.scenicspotMarkertypeMap.get(bean.getSpotType()));
 				String subString = bean.isSubmited()?"已提交":"未提交";
 				txtSubmit.setText(subString);
 				

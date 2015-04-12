@@ -20,9 +20,13 @@ import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.model.LatLng;
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
+import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.activity.Activity;
 import com.myapp.getlocation.entity.Points;
+import com.myapp.getlocation.entity.ScenicLineModel;
+import com.myapp.getlocation.entity.ScenicLineSectionModel;
+import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.entity.ScenicSpotModel;
 import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
@@ -39,6 +43,9 @@ public class InsertScenicPointLayout extends LinearLayout {
 	private TextView scenicSpotTxt;
 	private TextView scenicSpotIdTxt;
 	private BaiduMap mBaiduMap;
+	private String strType;
+	private String[] typeItems;//key
+	private String[] typeValueItems;//value
 	
 	private Dao<ScenicSpotModel, Integer> daoSpot;
 	private Dao<SpotPointsModel, Integer> daoSpotPoints;
@@ -68,8 +75,6 @@ public class InsertScenicPointLayout extends LinearLayout {
         Button okBtn = (Button) this.findViewById(R.id.button_ok);
         
         listScenicSpots = new ArrayList<ScenicSpotModel>();
-        searchSpotsData();
-        
         okBtn.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
@@ -98,16 +103,20 @@ public class InsertScenicPointLayout extends LinearLayout {
 			
 			@Override
 			public void onClick(View v) {
+				if(typeItems == null || typeValueItems == null) {
+					Toast.makeText(context, "抱歉，无数据", Toast.LENGTH_SHORT).show();
+					return;
+				}
 				// TODO Auto-generated method stub
-				final String[] items = {"1", "2", "3", "4"};
 				Dialog alertDialog = new AlertDialog.Builder(context)
 				.setTitle("类型列表")
-				.setItems(items, new DialogInterface.OnClickListener() {
+				.setItems(typeValueItems, new DialogInterface.OnClickListener() {
 					
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
-						spotTypeTxt.setText(items[which]);
-						searchSpotsData();
+						spotTypeTxt.setText(typeValueItems[which]);
+						strType = typeItems[which];
+						searchSpotsData(strType);
 						scenicSpotTxt.setText(listScenicSpots.get(0).getScenicspotName());
 						scenicSpotIdTxt.setText(listScenicSpots.get(0).getSpotId());
 					}
@@ -125,7 +134,7 @@ public class InsertScenicPointLayout extends LinearLayout {
 			
 			@Override
 			public void onClick(View v) {
-				searchSpotsData();
+				searchSpotsData(strType);
 				if(listScenicSpots.size() > 0) {
 					final String[] items = new String[listScenicSpots.size()];
 					for(ScenicSpotModel each:listScenicSpots) {
@@ -177,7 +186,9 @@ public class InsertScenicPointLayout extends LinearLayout {
 		Points point = new Points(longitude, latitude, altitude);
 		
 		entity.setSpotId(scenicSpotIdTxt.getText().toString());
-		entity.setScenicspotName(scenicSpotTxt.getText().toString());
+		entity.setSpotType(strType);
+//		entity.setScenicspotName(scenicSpotTxt.getText().toString());
+//		entity.setScenicId(scenicId);
 		entity.setPointsNum(1);
 			
 		ArrayList<Points> points = new ArrayList<Points>();
@@ -196,6 +207,7 @@ public class InsertScenicPointLayout extends LinearLayout {
 				break;}
 			}
 			if(!isHave){
+				entity.setScenicspotName(scenicSpotTxt.getText().toString());
 				daoSpotPoints.create(entity);
 				Toast.makeText(context, "添加成功", Toast.LENGTH_SHORT).show();
 				mBaiduMap.hideInfoWindow();
@@ -212,16 +224,65 @@ public class InsertScenicPointLayout extends LinearLayout {
 
 	}
 	
-	//may be deprecated
-	private void searchSpotsData() {
-		listScenicSpots.clear();
+	public void searchSpotType() {
 		if (daoSpot != null) {
 			CloseableIterator<ScenicSpotModel> iterator = daoSpot.iterator();
 			
+			ArrayList<String> typeArr = new ArrayList<String>();
 			while (iterator.hasNext()) {
 				ScenicSpotModel entity = iterator.next();
-				listScenicSpots.add(entity);
+				if(!typeArr.contains(entity.getSpotType())) {
+					typeArr.add(entity.getSpotType());
+				}
+
 			}
+			if(typeArr.size() == 0) {
+				return;
+			}
+			typeItems = new String[typeArr.size()];
+			typeValueItems = new String[typeArr.size()];
+			for(int index=0;index<typeArr.size();index++) {
+				typeItems[index] = typeArr.get(index);
+				typeValueItems[index] = Constants.scenicspotMarkertypeMap.get(typeArr.get(index));
+			}
+			strType = typeArr.get(0);
+			searchSpotsData(strType);
+		}
+	}
+	
+	//may be deprecated
+	private void searchSpotsData(String index) {
+		listScenicSpots.clear();
+		if (daoSpot != null) {
+			try {
+				List<ScenicSpotModel> tempModel=daoSpot.queryForEq("spotType", index);
+				for(ScenicSpotModel each : tempModel) {
+					
+					ScenicSpotModel entity = new ScenicSpotModel();
+					entity.setAbsoluteAltitude(each.getAbsoluteAltitude());
+					entity.setAbsoluteLatitude(each.getAbsoluteLatitude());
+					entity.setAbsoluteLongitude(each.getAbsoluteLongitude());
+					entity.setId(each.getId());
+					entity.setScenicId(each.getScenicId());
+					entity.setScenicspotName(each.getScenicspotName());
+					entity.setSpotId(each.getSpotId());
+					entity.setSpotType(each.getSpotType());
+					
+					listScenicSpots.add(entity);
+				}
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+	}
+	
+	public void initTextData() {
+		spotTypeTxt.setText(Constants.scenicspotMarkertypeMap.get(strType));
+		if(listScenicSpots.size() > 0) {
+			scenicSpotTxt.setText(listScenicSpots.get(0).getScenicspotName());
+			scenicSpotIdTxt.setText(listScenicSpots.get(0).getSpotId());
 		}
 	}
 	

@@ -277,7 +277,7 @@ public class DefaultHttpService implements HttpService {
 					buffer.append(svcName);
 				}
 				else {
-					buffer.append("/");
+//					buffer.append("/");
 					buffer.append(svcName);
 				}
 			}

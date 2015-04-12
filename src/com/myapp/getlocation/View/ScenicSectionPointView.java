@@ -23,8 +23,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.DotOptions;
+import com.baidu.mapapi.map.MapStatusUpdate;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolylineOptions;
+import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.R;
@@ -128,19 +132,24 @@ public class ScenicSectionPointView extends LinearLayout {
 					
 					@Override
 					public boolean onLongClick(View v) {
-//						LatLng p1 = new LatLng(39.97923, 116.357428);
-//						LatLng p2 = new LatLng(39.94923, 116.397428);
-//						LatLng p3 = new LatLng(39.97923, 116.437428);
-//						List<LatLng> points = new ArrayList<LatLng>();
-//						points.add(p1);
-//						points.add(p2);
-//						points.add(p3);
-//						OverlayOptions ooPolyline = new PolylineOptions().width(10)
-//								.color(0xAAFF0000).points(points);
-//						mBaiduMap.addOverlay(ooPolyline);
-						ArrayList<Points> points = bean.getSectionPoints();
 						mBaiduMap.clear();
+						
+						ArrayList<Points> points = bean.getSectionPoints();
+						if (points.size() == 0) return true;						
 						List<LatLng> pts = new ArrayList<LatLng>(); 
+						LatLng pointStar = new LatLng(points.get(0).getAbsoluteLatitude() + 0.001, 
+								points.get(0).getAbsoluteLongitude());
+						OverlayOptions textOption = new TextOptions()  
+					    .bgColor(0xAAFFFF00)  
+					    .fontSize(24)  
+					    .fontColor(0xFFFF00FF)  
+					    .text(bean.getAspotName()+"-"+bean.getBspotName())
+					    .position(pointStar);  
+						//在地图上添加该文字对象并显示  
+						mBaiduMap.addOverlay(textOption);
+						MapStatusUpdate arg0 = MapStatusUpdateFactory.newLatLng(pointStar);
+						mBaiduMap.animateMapStatus(arg0);
+						
 						for(Points each : points) {//俩个点一样，就看不到线
 							LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());//test
 							if(point.latitude != 0 && point.longitude != 0) {

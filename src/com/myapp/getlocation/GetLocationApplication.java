@@ -14,6 +14,15 @@ public class GetLocationApplication extends Application {
 	public void onCreate() {
 		super.onCreate();
 		SDKInitializer.initialize(this); 
+		Constants.scenicspotMarkertypeMap.put("1", "景点");
+		Constants.scenicspotMarkertypeMap.put("2", "洗手间");
+		Constants.scenicspotMarkertypeMap.put("3", "索道");
+		Constants.scenicspotMarkertypeMap.put("4", "码头");
+		Constants.scenicspotMarkertypeMap.put("5", "游客中心");
+		Constants.scenicspotMarkertypeMap.put("6", "停车场");
+		Constants.scenicspotMarkertypeMap.put("7", "换乘中心");
+		Constants.scenicspotMarkertypeMap.put("8", "售票处");
+		Constants.scenicspotMarkertypeMap.put("9", "出入口");
 		predefineAppInitChain();
 //		int rqVersion = this.getMetaDataInt(DATABASE_FILE_VERSION, DATABASE_DEFAULT_VERSION);
 //		EntityHelper entityHelper = new EntityHelper(this, target.getPath(), null, 1);

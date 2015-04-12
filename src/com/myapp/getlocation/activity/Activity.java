@@ -228,7 +228,7 @@ public class Activity extends FragmentActivity {
 	 * <p>Modification History:</p>
 	 * <p>Date       Author      Description</p>
 	 * <p>------------------------------------------------------------------</p>
-	 * <p>   新建  </p>
+	 * <p>     </p>
 	 * <p>  </p>
 	 */
 	private class ProgressTitleHandler extends ProgressHandler{
@@ -256,7 +256,7 @@ public class Activity extends FragmentActivity {
 	}
 	
 	/**
-	 * @author admin
+	 * @author
 	 *
 	 */
 	private interface ExitAppStrategy {
@@ -264,7 +264,7 @@ public class Activity extends FragmentActivity {
 	}
 	
 	/**
-	 * @author admin
+	 * @author
 	 *
 	 */
 	private class DoubleBackStrategy implements ExitAppStrategy {
@@ -310,7 +310,7 @@ public class Activity extends FragmentActivity {
 		}
 		
 		/**
-		 * @author admin
+		 * @author
 		 *
 		 */
 		class CloseAppHandler extends Handler{
@@ -325,7 +325,7 @@ public class Activity extends FragmentActivity {
 
 	
 	/**
-	 * @author admin
+	 * @author
 	 *
 	 */
 	private class DialogStrategy implements ExitAppStrategy {
