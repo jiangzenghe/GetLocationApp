@@ -71,21 +71,21 @@ public class ScenicDataInitHelper {
 
 		@Override
 		public void onHttpServiceFinished(HttpResponse response) {
-//			Message message = new Message();
-//            handlerSpotLine.sendMessage(message);
+			Message message = new Message();
+            handlerSpotLine.sendMessage(message);
 			//从解压出来的目录中读取json文件的内容
-			try {
-				String json = EntityUtils.toString(response.getEntity(), "gbk");
-	            if (TextUtils.isEmpty(json)) {
-	                Toast.makeText(context, "spot和line数据加载解压出错", Toast.LENGTH_SHORT).show();
-	            } else {
-	                //json解析并保存的手机的SQLite 数据库
-	                dealSpotData(json);
-//	                dealLineData(json);
-	            }
-			}catch (Exception ex){
-				ex.printStackTrace();
-			}
+//			try {
+//				String json = EntityUtils.toString(response.getEntity(), "gbk");
+//	            if (TextUtils.isEmpty(json)) {
+//	                Toast.makeText(context, "spot和line数据加载解压出错", Toast.LENGTH_SHORT).show();
+//	            } else {
+//	                //json解析并保存的手机的SQLite 数据库
+//	                dealSpotData(json);
+////	                dealLineData(json);
+//	            }
+//			}catch (Exception ex){
+//				ex.printStackTrace();
+//			}
             
 		}
 
@@ -96,31 +96,30 @@ public class ScenicDataInitHelper {
 
 		@Override
 		public void onHttpServicePrepare(HttpResponse response) {
-//			if (response == null) {
-//				return ;
-//			}
-//			
-//			InputStream inputStream = null;
-//			try {
-//				inputStream = response.getEntity().getContent();
-//				FileUtil fileUtil = new FileUtil();
-//				File resultFile = fileUtil.write2SDFromInput(Constants.SCENIC_ROUTER_FILE_PATH, 
-//    					Constants.SCENIC + scenicId + Constants.ALL_SCENIC_ZIP, inputStream);
-//			} catch (IOException e) {
-//				
-//			} catch (Exception e) {
-//				
-//			} finally {
-//				try {
-//					if (inputStream != null)
-//						inputStream.close();
-//				} catch (Exception e2) {
-//					
-//				}
-//			}
+			if (response == null) {
+				return ;
+			}
+			
+			InputStream inputStream = null;
+			try {
+				inputStream = response.getEntity().getContent();
+				FileUtil fileUtil = new FileUtil();
+				File resultFile = fileUtil.write2SDFromInput(Constants.SCENIC_ROUTER_FILE_PATH, 
+    					Constants.SCENIC + scenicId + Constants.ALL_SCENIC_ZIP, inputStream);
+			} catch (IOException e) {
+				
+			} catch (Exception e) {
+				
+			} finally {
+				try {
+					if (inputStream != null)
+						inputStream.close();
+				} catch (Exception e2) {
+					
+				}
+			}
 		}
 		
-
 		public void dealSpotData(String json) {
 			try {
 				// consume an optional byte order mark (BOM) if it exists 
@@ -276,13 +275,13 @@ public class ScenicDataInitHelper {
 				defaultDialog);
 		DownSingleSpotFileHandler downHander = new DownSingleSpotFileHandler(scenicId);
 		
-//		try {
-//			context.getProgressHttpService(handler).callGetService(Constants.API_SINGLE_SCENIC_DOWNLOAD + scenicId, null, downHander);
-//		} catch (UnsupportedEncodingException e) {
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+		try {
+			context.getProgressHttpService(handler).callGetService(Constants.API_SINGLE_SCENIC_DOWNLOAD + scenicId, null, downHander);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public ArrayList<ScenicModel> searchScenicsData() {
@@ -422,14 +421,126 @@ public class ScenicDataInitHelper {
 	                    Toast.makeText(context, "spot和line数据加载解压出错", Toast.LENGTH_SHORT).show();
 	                } else {
 	                    //json解析并保存的手机的SQLite 数据库
-//                        dealSpotData(json);
-//                        dealLineData(json);
+                        dealSpotData(json);
+                        dealLineData(json);
 	                }
 	            } catch (Exception e) {
 	                Toast.makeText(context, "spot或line数据加载解压出错", Toast.LENGTH_SHORT).show();
 	            }
 		}
 		
+		public void dealSpotData(String json) {
+			try {
+                JSONTokener jsonParser = new JSONTokener(json);
+                JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
+                JSONArray jsonArray = jsonObject.getJSONArray("scenicMap");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                	String scenicMapId = jsonArray.getJSONObject(i).getString("id");
+                    if (!TextUtils.isEmpty(scenicMapId) ) {
+                    	ScenicSpotModel scenicMapModel = new ScenicSpotModel();
+                        scenicMapModel.setSpotId(scenicMapId);
+                        scenicMapModel.setScenicId(jsonArray.getJSONObject(i).getString("scenicId"));
+                        scenicMapModel.setScenicspotName(jsonArray.getJSONObject(i).getString("scenicspotName"));
+//                        scenicMapModel.setSpotType(jsonArray.getJSONObject(i).getString("scenicSpotMarkerType"));
+                        scenicMapModel.setSpotType("1");
+                        
+                        boolean isHave=false;
+                        List<ScenicSpotModel> temp=daoSpot.queryForEq("spotId", scenicMapModel.getSpotId());
+                        for(int j=0;j<temp.size();j++){
+                        	if(temp.get(j).getSpotId().equals(scenicMapModel.getSpotId()))
+                        	{isHave=true;
+                        	break;}
+                        }
+                        if(!isHave){
+                        	daoSpot.create(scenicMapModel);
+                        }
+                        else{//已经存在   
+                        	
+                        }
+                    }
+                }
+                
+                Toast.makeText(context, "spot数据加载解压成功", Toast.LENGTH_SHORT).show();
+                
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Toast.makeText(context, "spot数据加载解压出错", Toast.LENGTH_SHORT).show();
+            } finally {
+            	
+            }
+			
+		}
+		
+		public void dealLineData(String json) {
+			try {
+                JSONTokener jsonParser = new JSONTokener(json);
+                JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
+                JSONArray jsonArray = jsonObject.getJSONArray("scenicRecommendLine");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONArray jsonArrayL = jsonArray.getJSONArray(i);
+                    for (int j = 0; j < jsonArrayL.length(); j++) {
+                        if (j == 0) {  //路线
+                            String scenicRecommendLineId = jsonArrayL.getJSONObject(j).getString("id");
+                            if (!TextUtils.isEmpty(scenicRecommendLineId)) {
+                                ScenicLineModel scenicRecommendLineModel = new ScenicLineModel();
+                                scenicRecommendLineModel.setScenicId(jsonArrayL.getJSONObject(j).getString("scenicId"));
+                                scenicRecommendLineModel.setScenicLineId(scenicRecommendLineId);
+                                scenicRecommendLineModel.setScenicLinename(jsonArrayL.getJSONObject(j).getString("recommendRoutename"));
+                                
+                                boolean isHave=false;
+                                List<ScenicLineModel> temp=daoLine.queryForEq("scenicLineId", scenicRecommendLineModel.getScenicLineId());
+                                for(int k=0;k<temp.size();k++){
+                                	if(temp.get(k).getScenicLineId().equals(scenicRecommendLineModel.getScenicLineId()))
+                                	{isHave=true;
+                                	break;}
+                                }
+                                if(!isHave){
+                                	daoLine.create(scenicRecommendLineModel);
+                                }
+                                else{//已经存在   
+                                	
+                                }
+                            }
+                        } else {  //路线中的路段
+                            String recommendLinesectionId = jsonArrayL.getJSONObject(j).getString("id");
+                            if (!TextUtils.isEmpty(recommendLinesectionId)) {
+                            	ScenicLineSectionModel recommendLinesectionModel = new ScenicLineSectionModel();
+                                recommendLinesectionModel.setLinesectionId(recommendLinesectionId);
+                                recommendLinesectionModel.setScenicId(jsonArrayL.getJSONObject(j).getString("scenicId"));
+                                recommendLinesectionModel.setScenicLineId(jsonArrayL.getJSONObject(j).getString("recommendrouteId"));
+                                recommendLinesectionModel.setRouteOrder(jsonArrayL.getJSONObject(j).getInt("routeOrder"));
+                                recommendLinesectionModel.setAspotId(jsonArrayL.getJSONObject(j).getString("aspotId"));
+                                recommendLinesectionModel.setBspotId(jsonArrayL.getJSONObject(j).getString("bspotId"));
+                                recommendLinesectionModel.setAspotName(jsonArrayL.getJSONObject(j).getString("ascenicspotName"));
+                                recommendLinesectionModel.setBspotName(jsonArrayL.getJSONObject(j).getString("bscenicspotName"));
+                                recommendLinesectionModel.setScenicLinename(jsonArrayL.getJSONObject(j).getString("recommendRoutename"));
+                                
+                                boolean isHave=false;
+                                List<ScenicLineSectionModel> temp=daoSection.queryForEq("linesectionId", recommendLinesectionModel.getLinesectionId());
+                                for(int k=0;k<temp.size();k++){
+                                	if(temp.get(k).getLinesectionId().equals(recommendLinesectionModel.getLinesectionId()))
+                                	{isHave=true;
+                                	break;}
+                                }
+                                if(!isHave){
+                                	daoSection.create(recommendLinesectionModel);
+                                }
+                                else{//已经存在   
+                                	
+                                }
+                            }
+                        }
+                    }
+                }
+                Toast.makeText(context, "line数据加载解压成功", Toast.LENGTH_SHORT).show();
+                
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Toast.makeText(context, "line数据加载解压出错", Toast.LENGTH_SHORT).show();
+            } finally {
+            	
+            }
+		}	
 	}
 
 	public Dao<ScenicSpotModel, Integer> getDaoSpot() {
