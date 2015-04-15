@@ -21,8 +21,8 @@ public class Constants {
     public static final String SCENIC_IMAGE_FILE_PATH = Environment.getExternalStorageDirectory() + "/imyuu/scenic/";
 
     public static final String API_ALL_SCENIC_DOWNLOAD = "/trip/allScenicScenicAreaAction.action";
-    public static final String API_SINGLE_SCENIC_DOWNLOAD = "/trip/oneScenicScenicAreaAction.action?scenicId=";
-//    public static final String API_SINGLE_SCENIC_DOWNLOAD = ":8080/IUURestful/collection/";
+//    public static final String API_SINGLE_SCENIC_DOWNLOAD = "/trip/oneScenicScenicAreaAction.action?scenicId=";
+    public static final String API_SINGLE_SCENIC_DOWNLOAD = ":8080/IUURestful/collection/";
 //    public static final String API_SPOT_SUBMIT = "http://192.168.1.114:8000/WebTest/jieshou";
 //    public static final String API_SECTION_SUBMIT = "http://www.imyuu.com/trip/loginInfoFromAPPRegRegisterAccountAction.action";
     public static final String API_SPOT_SUBMIT = ":8080/IUURestful/collection/upload";

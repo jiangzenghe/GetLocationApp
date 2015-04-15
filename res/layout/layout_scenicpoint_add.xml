@@ -43,6 +43,7 @@
 	        android:gravity="center_vertical"
 	        android:padding="8dp"
 	        android:layout_marginLeft="10dp"
+	        android:layout_marginRight="10dp"
 	        android:textColor="#ffffff"
 	        android:textStyle="bold"
 	        android:textSize="14sp"
@@ -54,7 +55,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:orientation="horizontal" >
+        android:orientation="horizontal" 
+        android:visibility="gone">
 
         <TextView
             android:layout_width="0dp"
@@ -91,6 +93,22 @@
             android:layout_marginLeft="10dp"
             android:textColor="#ffffff"
             android:textSize="14sp" />
+ 		<!-- //输入数达到3时开始显示提示 -->
+	    <AutoCompleteTextView
+            android:completionThreshold="1"  
+            android:id="@+id/spot_point_name"    
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+	        android:padding="8dp"
+	        android:layout_marginRight="10dp"
+	        android:layout_marginLeft="10dp"
+	        android:textSize="14sp"
+	        android:textColor="#ffffff"
+            android:ems="10"
+            android:hint="请输入景点" >
+        </AutoCompleteTextView> 
+        <!-- 
 	    <TextView
 	        android:id="@+id/spot_point_name"
 	        android:layout_width="0dp"
@@ -102,6 +120,7 @@
 	        android:textSize="14sp"
 	        android:textColor="#ffffff"
 	        android:hint="请点击选择景点" />
+         -->
 	</LinearLayout>
     
     <LinearLayout
