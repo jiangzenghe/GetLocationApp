@@ -3,7 +3,6 @@
  */
 package com.myapp.getlocation.db;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
@@ -16,10 +15,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Message;
+import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -28,15 +28,15 @@ import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.activity.Activity;
+import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.ScenicModel;
-import com.myapp.getlocation.entity.ScenicSpotModel;
 import com.myapp.getlocation.entity.SectionPointsModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
 import com.myapp.getlocation.http.HttpServiceHandler;
 import com.myapp.getlocation.http.HttpServiceProgressWrapper.ProgressDialogHandler;
 import com.myapp.getlocation.util.FileUtil;
-import com.myapp.getlocation.util.ZipUtil;
+import com.myapp.getlocation.util.HttpUtil;
 
 /**
  * @author Jiang
@@ -197,7 +197,90 @@ public class ScenicDataInitHelper {
 		
 	}
 	
+	public void testSpotDataSubmited(final String scenicId) {
+		boolean result = false;
+		final ArrayList<SpotPointsModel> unsubListSpot = new ArrayList<SpotPointsModel>();
+		if(daoSpotPoints != null) {
+			CloseableIterator<SpotPointsModel> iterator = daoSpotPoints.iterator();
+			
+			while (iterator.hasNext()) {
+				SpotPointsModel entity = iterator.next();
+				if(!entity.isSubmited() && entity.isColleted()) {
+					unsubListSpot.add(entity);
+				}
+			}
+		}
+		if(unsubListSpot.size()>0) {
+			result = true;
+		}
+		if(result) {
+			Dialog alertDialog = new AlertDialog.Builder(context)
+			.setTitle("警告")
+			.setMessage("有未提交数据，是否先提交？")
+			.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					new SubmitDataTask(scenicId).execute(unsubListSpot);
+				}
+			})
+			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					dialog.dismiss();
+					testSectionDataSubmited(scenicId);
+				}
+			}).create();
+			alertDialog.show();
+		} else {
+			testSectionDataSubmited(scenicId);
+		}
+	}
+	
+	public void testSectionDataSubmited(final String scenicId) {
+		boolean result = false;
+		final ArrayList<SectionPointsModel> unsubListSection = new ArrayList<SectionPointsModel>();
+		if(daoSectionPoints != null) {
+			CloseableIterator<SectionPointsModel> iterator = daoSectionPoints.iterator();
+			
+			while (iterator.hasNext()) {
+				SectionPointsModel entity = iterator.next();
+				if(!entity.isSubmited()) {
+					unsubListSection.add(entity);
+				}
+			}
+		}
+		if(unsubListSection.size()>0) {
+			result = true;
+		}
+		if(result) {
+			Dialog alertDialog = new AlertDialog.Builder(context)
+			.setTitle("警告")
+			.setMessage("有未提交数据，是否先提交？")
+			.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					new SubmitLineTask(scenicId).execute(unsubListSection);
+				}
+			})
+			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					dialog.dismiss();
+					initSpotAndLine(scenicId);
+				}
+			}).create();
+			alertDialog.show();
+		} else {
+			initSpotAndLine(scenicId);
+		}
+	}
+	
 	public void initSpotAndLine(final String scenicId) {
+		
 		// 远程连接时，使用进度对话框
 		ProgressDialog defaultDialog = new ProgressDialog(context);
 		defaultDialog.setMessage("等待中");
@@ -293,6 +376,78 @@ public class ScenicDataInitHelper {
         	}
 		} catch (Exception e) {
 			// TODO: handle exception
+		}
+	}
+	
+	class SubmitDataTask extends AsyncTask<ArrayList<SpotPointsModel>, Void, Integer> {
+		private ArrayList<SpotPointsModel> listSpotPoints;
+		private String scenicId;
+		public SubmitDataTask(String scenicId) {
+			this.scenicId = scenicId;
+		}
+		
+		protected Integer doInBackground(ArrayList<SpotPointsModel>... data) {
+			try {
+				listSpotPoints = data[0];
+				Application app = (Application)context.getApplication();
+				String baseAdd = app.getMetaDataString("framework.config.service.base.address", "");
+//				baseAdd = "http://www.imyuu.com:8080/";
+				int result = HttpUtil.postListByRestTemplate(
+						baseAdd + Constants.API_SPOT_SUBMIT, listSpotPoints);
+				return result;
+			} catch (Exception e) {
+				e.printStackTrace();
+				return 0;
+			}
+		}
+
+		protected void onPostExecute(Integer result) {
+			// TODO: check this.exception
+			Log.i("doInBackground", "execute result is:" + result);
+			if (result == 0) {
+				Toast.makeText(context, "提交出错", Toast.LENGTH_SHORT)
+						.show();
+			} else {
+				Toast.makeText(context, "提交成功", Toast.LENGTH_SHORT)
+				.show();
+				testSectionDataSubmited(scenicId);
+			}
+		}
+	}
+
+	class SubmitLineTask extends AsyncTask<ArrayList<SectionPointsModel>, Void, Integer> {
+		private ArrayList<SectionPointsModel> listSectionPoints = null;
+		private String scenicId;
+		public SubmitLineTask(String scenicId) {
+			this.scenicId = scenicId;
+		}
+		
+		protected Integer doInBackground(ArrayList<SectionPointsModel>... data) {
+			try {
+				listSectionPoints = data[0];
+				Application app = (Application)context.getApplication();
+				String baseAdd = app.getMetaDataString("framework.config.service.base.address", "");
+//				baseAdd = "http://www.imyuu.com:8080/";
+				int result = HttpUtil.postByRestTemplate(
+						baseAdd + Constants.API_SECTION_SUBMIT, listSectionPoints);
+				return result;
+			} catch (Exception e) {
+				e.printStackTrace();
+				return 0;
+			}
+		}
+
+		protected void onPostExecute(Integer feed) {
+			// TODO: check this.exception
+			Log.i("doInBackground", "execute result is:" + feed);
+			if (feed == 0) {
+				Toast.makeText(context, "提交出错", Toast.LENGTH_SHORT)
+						.show();
+			} else {
+				Toast.makeText(context, "提交成功", Toast.LENGTH_SHORT)
+				.show();
+				initSpotAndLine(scenicId);
+			}
 		}
 	}
 	

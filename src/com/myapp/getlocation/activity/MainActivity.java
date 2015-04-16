@@ -7,11 +7,11 @@ import java.util.List;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.Intent;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -75,6 +75,7 @@ public class MainActivity extends Activity {
 	
 	private String scenicId="";
 	private SectionPointsModel insertSection;
+	private SoundPool soundPool;
 	//
 	BitmapDescriptor bdLocation = BitmapDescriptorFactory
 			.fromResource(R.drawable.location);
@@ -117,6 +118,10 @@ public class MainActivity extends Activity {
 		daoSpotPoints = dataInitHelper.getDaoSpotPoints();
 		daoSectionPoints = dataInitHelper.getDaoSectionPoints();
 		listScenics = dataInitHelper.searchScenicsData();
+		soundPool = new SoundPool(1, // maxStreams参数，该参数为设置同时能够播放多少音效
+            AudioManager.STREAM_MUSIC, // streamType参数，该参数设置音频类型，在游戏中通常设置为：STREAM_MUSIC
+            0 // srcQuality参数，该参数设置音频文件的质量，目前还没有效果，设置为0为默认值。
+			);
 		
 		Log.e("Main oncreate", "Main oncreate");
 		//
@@ -169,6 +174,23 @@ public class MainActivity extends Activity {
 				return true;
 			}
 		});
+		
+		scenicId = "221";
+//		dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
+		imgLoc.setVisibility(View.VISIBLE);
+		initRayMenu();
+		AudioManager am = (AudioManager) MainActivity.this
+                .getSystemService(Context.AUDIO_SERVICE);// 实例化AudioManager对象
+        float audioMaxVolumn = // 返回当前AudioManager对象的最大音量值
+        		am.getStreamMaxVolume(AudioManager.STREAM_MUSIC); 
+        float audioCurrentVolumn = am // 返回当前AudioManager对象的音量值
+                        .getStreamVolume(AudioManager.STREAM_MUSIC);
+        float volumnRatio = audioCurrentVolumn / audioMaxVolumn;
+		soundPool.play(soundPool.load(MainActivity.this, R.raw.dontpanic, 1), 
+				volumnRatio, volumnRatio, 1, 0, 1);
+		soundPool.release();
+		mLocClient.start();
+		mLocClient.requestLocation();
 	}
 
 	private void initRayMenu() {
@@ -313,7 +335,7 @@ public class MainActivity extends Activity {
 			result = true;
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
 			.setTitle("警告")
-			.setMessage("有未提交数据，是否继续推出？")
+			.setMessage("有未提交数据，是否继续退出？")
 			.setPositiveButton("确定", new DialogInterface.OnClickListener() {
 				
 				@Override
@@ -421,7 +443,7 @@ public class MainActivity extends Activity {
 					defaultDialog = new ProgressDialog(MainActivity.this);
 					defaultDialog.setMessage("等待中");
 					defaultDialog.show();
-					new SubmitLineTask().execute(listSectionPoints);
+					new SubmitLineTask().execute(submitSectionPoints);
 				}
 			})
 			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -525,8 +547,18 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				if(sectionNameEdit.getText().toString().equals("")) {
-					Toast.makeText(MainActivity.this, "请输入路线点", Toast.LENGTH_SHORT).show();
+					Toast.makeText(MainActivity.this, "请输入路线名称", Toast.LENGTH_SHORT).show();
 					return;
+				}
+				try {
+					List<SectionPointsModel> tempModel = daoSectionPoints.queryForEq("scenicLinename", 
+							sectionNameEdit.getText().toString());
+					if(tempModel.size() > 0) {
+						Toast.makeText(MainActivity.this, "已经收集过该路线", Toast.LENGTH_SHORT).show();
+					}
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 				locFollow = true;
 				insertSection = new SectionPointsModel();
@@ -694,7 +726,8 @@ public class MainActivity extends Activity {
 							@Override
 							public void onClick(DialogInterface dialog, int which) {
 								scenicId = lists.get(which).getScenicId();
-								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
+//								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
+								dataInitHelper.testSpotDataSubmited(lists.get(which).getScenicId());
 								imgLoc.setVisibility(View.VISIBLE);
 								initRayMenu();
 							}
@@ -723,8 +756,31 @@ public class MainActivity extends Activity {
 				double longitude = location.getLongitude();
 				double latitude = location.getLatitude();
 				double altitude = location.getAltitude();
+				latitude = 4.9E-324;
 				if (longitude< 0.00001 || latitude <0.00001
-						|| longitude==0.0 || latitude==0.0 ) return;
+						|| longitude==0.0 || latitude==0.0 ) {
+					Toast.makeText(MainActivity.this, "数据未正常获取到！", Toast.LENGTH_SHORT).show();
+					mLocClient.stop();
+					new Thread() {
+						@Override
+						public void run() {
+							AudioManager am = (AudioManager) MainActivity.this
+		                            .getSystemService(Context.AUDIO_SERVICE);// 实例化AudioManager对象
+				            float audioMaxVolumn = // 返回当前AudioManager对象的最大音量值
+				            		am.getStreamMaxVolume(AudioManager.STREAM_MUSIC); 
+				            float audioCurrentVolumn = am // 返回当前AudioManager对象的音量值
+				                            .getStreamVolume(AudioManager.STREAM_MUSIC);
+				            float volumnRatio = audioCurrentVolumn / audioMaxVolumn;
+							soundPool.play(soundPool.load(MainActivity.this, R.raw.dontpanic, 1), 
+									volumnRatio, volumnRatio, 1, 0, 1);
+							soundPool.release();
+							mLocClient.start();
+							mLocClient.requestLocation();
+						};
+					}.start();
+					
+					return;
+				}
 				Points point = new Points(longitude, latitude, altitude);
 				DrawToolUtil.drawDynamicLine(initPointAll ,point, mBaiduMap);
 				initPointAll = new Points(longitude, latitude, altitude);
@@ -760,6 +816,8 @@ public class MainActivity extends Activity {
 		if(insertSection != null) {
 			if(insertSection.getSectionPoints()==null || insertSection.getSectionPoints().size()<2) {
 				Toast.makeText(MainActivity.this, "未采集到路线数据", Toast.LENGTH_SHORT).show();
+				insertSection = null;
+				return;
 			}
 			insertSection.setSubmited(false);
 			try {
@@ -779,8 +837,10 @@ public class MainActivity extends Activity {
 							try {
 								daoSectionPoints.createOrUpdate(tempModel.get(0));
 								Toast.makeText(MainActivity.this, "已有该本地数据,修改成功",Toast.LENGTH_SHORT).show();
+								insertSection = null;
 							} catch (SQLException e) {
 								e.printStackTrace();
+								insertSection = null;
 							}
 						}
 					})
@@ -788,19 +848,20 @@ public class MainActivity extends Activity {
 						
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
-							return;
+							insertSection = null;
 						}
 					}).create();
 					alertDialog.show();
 				} else {
 					daoSectionPoints.create(insertSection);
 					Toast.makeText(MainActivity.this, "添加成功", Toast.LENGTH_SHORT).show();
+					insertSection = null;
 				}
 				
 			} catch (SQLException e) {
 				Toast.makeText(MainActivity.this, "添加本地数据错误",Toast.LENGTH_SHORT).show();
+				insertSection = null;
 			}
-			insertSection = null;
 		}
 
 	}
