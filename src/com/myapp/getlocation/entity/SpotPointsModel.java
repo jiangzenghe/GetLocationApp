@@ -11,6 +11,12 @@ import com.j256.ormlite.table.DatabaseTable;
  */
 @DatabaseTable(tableName="SCENIC_SPOT_POINTS")
 public class SpotPointsModel {
+	public SpotPointsModel() {
+		this.pointsNum = 0;
+		ArrayList<Points> points = new ArrayList<Points>();
+		this.spotPoints = points;
+	}
+	
 	@DatabaseField(generatedId=true)
 	private Integer id;
 	@DatabaseField(width=20)
@@ -82,6 +88,13 @@ public class SpotPointsModel {
 	}
 	public void setPointsNum(int pointsNum) {
 		this.pointsNum = pointsNum;
+	}
+	public boolean isColleted() {
+		boolean result = false;
+		if(spotPoints!=null && spotPoints.size()>0) {
+			result = true;
+		}
+		return result;
 	}
 	
 }

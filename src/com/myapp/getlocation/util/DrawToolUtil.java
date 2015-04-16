@@ -1,6 +1,5 @@
 package com.myapp.getlocation.util;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,14 +7,11 @@ import android.graphics.Color;
 
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.DotOptions;
-import com.baidu.mapapi.map.MapStatusUpdate;
-import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.myapp.getlocation.entity.Points;
-import com.myapp.getlocation.entity.SpotPointsModel;
 
 
 
@@ -24,6 +20,42 @@ import com.myapp.getlocation.entity.SpotPointsModel;
 public class DrawToolUtil {
 
 	private BaiduMap mBaiduMap;
+	
+	public static void drawDynamicLineName(ArrayList<Points> points, String name, BaiduMap mBaiduMap) {
+		int index = points.size()/2 + 1;
+		Points point = points.get(index);
+		LatLng pointLabel = new LatLng(point.getAbsoluteLatitude(), 
+				point.getAbsoluteLongitude());
+		OverlayOptions textOption = new TextOptions()  
+	    .bgColor(0xAAFFFF00)  
+	    .fontSize(24)  
+	    .fontColor(0xFFFF00FF)  
+	    .text(name)
+	    .position(pointLabel);  
+		//在地图上添加该文字对象并显示  
+		mBaiduMap.addOverlay(textOption);
+	}
+	
+	public static void drawDynamicLine(ArrayList<Points> points, BaiduMap mBaiduMap) {
+		List<LatLng> pts = new ArrayList<LatLng>();
+		
+		for(Points each : points) {//俩个点一样，就看不到线
+			LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());//test
+			if(point.latitude != 0 && point.longitude != 0) {
+				pts.add(point);
+			}
+		}
+		
+		if(pts.size() >=2 && pts.size() <10000) {
+			//构建用于绘制多边形的Option对象  
+			OverlayOptions polygonOption = new PolylineOptions()  
+			.width(8)
+			.color(0xAAFF0000)
+			.points(pts);
+			//在地图上添加Option，用于显示  
+			mBaiduMap.addOverlay(polygonOption);
+		}
+	}
 	
 	public static void drawDynamicLine(Points start,Points end, BaiduMap mBaiduMap) {
 		if(start == null) {
@@ -47,7 +79,7 @@ public class DrawToolUtil {
 		}
 	}
 	
-	public void drawSinglePoint(Points point, String name, BaiduMap mBaiduMap) {
+	public static void drawSinglePoint(Points point, String name, BaiduMap mBaiduMap) {
 		LatLng pointLabel = new LatLng(point.getAbsoluteLatitude(), 
 				point.getAbsoluteLongitude());
 		OverlayOptions textOption = new TextOptions()  
@@ -66,7 +98,7 @@ public class DrawToolUtil {
 		mBaiduMap.addOverlay(dotOption);
 	}
    
-	public void drawSinglePoint(ArrayList<Points> points, String name, BaiduMap mBaiduMap) {
+	public static void drawSinglePoint(ArrayList<Points> points, String name, BaiduMap mBaiduMap) {
 		double sumLatitude = 0.0;
 		double sumLongitude = 0.0;
 		if(points.size() > 0) {

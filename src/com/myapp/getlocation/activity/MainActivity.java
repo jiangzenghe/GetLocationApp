@@ -2,20 +2,25 @@ package com.myapp.getlocation.activity;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -108,12 +113,9 @@ public class MainActivity extends Activity {
 		
 		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
 		dataInitHelper.onCreate();
-		try {
-			daoSpotPoints = getEntityHelper().getDao(SpotPointsModel.class);
-			daoSectionPoints = getEntityHelper().getDao(SectionPointsModel.class);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+//			daoSpotPoints = getEntityHelper().getDao(SpotPointsModel.class);
+		daoSpotPoints = dataInitHelper.getDaoSpotPoints();
+		daoSectionPoints = dataInitHelper.getDaoSectionPoints();
 		listScenics = dataInitHelper.searchScenicsData();
 		
 		Log.e("Main oncreate", "Main oncreate");
@@ -129,6 +131,7 @@ public class MainActivity extends Activity {
 		mLocClient.start();
 		
 		imgLoc = (ImageView)findViewById(R.id.img_location);
+		imgLoc.setVisibility(View.GONE);
 		imgLoc.setOnClickListener(new OnClickListener() {
 			
 			@Override
@@ -136,11 +139,13 @@ public class MainActivity extends Activity {
 				if(locFollow) {
 					locFollow = false;
 					mBaiduMap.setMyLocationEnabled(false);
+					mLocClient.stop();
 					imgLoc.setImageResource(R.drawable.main_location);
 					insertSectionData();
 				} else {
 					locByHand = true;
 					mBaiduMap.clear();
+					mLocClient.start();
 					mLocClient.requestLocation();
 				}
 				
@@ -151,13 +156,12 @@ public class MainActivity extends Activity {
 			public boolean onMarkerClick(final Marker marker) {
 				Toast.makeText(MainActivity.this, "添加景点数据", Toast.LENGTH_SHORT).show();
 				
-				InsertScenicPointLayout layout = new InsertScenicPointLayout(MainActivity.this);
+				InsertScenicPointLayout layout = new InsertScenicPointLayout(MainActivity.this, scenicId);
 				LatLng ll = marker.getPosition();
 				layout.setLatLng(ll);
 				layout.setmBaiduMap(mBaiduMap);
 				if(daoSpotPoints != null) {
 					layout.setDaoSpotPoints(daoSpotPoints);
-					layout.setDaoSpot(dataInitHelper.getDaoSpot());
 					layout.searchSpotType();
 				}
 				mInfoWindow = new InfoWindow(layout, ll, 0);
@@ -183,6 +187,7 @@ public class MainActivity extends Activity {
 						if(locFollow) {
 							locFollow = false;
 							mBaiduMap.setMyLocationEnabled(false);
+							mLocClient.stop();
 							imgLoc.setImageResource(R.drawable.main_location);
 							insertSectionData();
 							return;
@@ -193,6 +198,7 @@ public class MainActivity extends Activity {
 						if(locFollow) {
 							locFollow = false;
 							mBaiduMap.setMyLocationEnabled(false);
+							mLocClient.stop();
 							imgLoc.setImageResource(R.drawable.main_location);
 							insertSectionData();
 						}
@@ -201,6 +207,7 @@ public class MainActivity extends Activity {
 						if(locFollow) {
 							locFollow = false;
 							mBaiduMap.setMyLocationEnabled(false);
+							mLocClient.stop();
 							imgLoc.setImageResource(R.drawable.main_location);
 							insertSectionData();
 						}
@@ -209,6 +216,7 @@ public class MainActivity extends Activity {
 						if(locFollow) {
 							locFollow = false;
 							mBaiduMap.setMyLocationEnabled(false);
+							mLocClient.stop();
 							imgLoc.setImageResource(R.drawable.main_location);
 							insertSectionData();
 						}
@@ -232,6 +240,7 @@ public class MainActivity extends Activity {
 		mMapView.onPause();
 		locFollow = false;
 		mBaiduMap.setMyLocationEnabled(false);
+		mLocClient.stop();
 		imgLoc.setImageResource(R.drawable.main_location);
 		insertSectionData();
 		super.onPause();
@@ -243,6 +252,24 @@ public class MainActivity extends Activity {
 		super.onResume();
 	}
 
+//	@Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event) {
+//        if (keyCode == KeyEvent.KEYCODE_BACK) {// 当keyCode等于退出事件值时
+//            return false;
+//        } else {
+//            return super.onKeyDown(keyCode, event);
+//        }
+//    }
+	
+	@Override
+	public void onBackPressed() {
+		if (testDataSubmited()) {
+			return;
+		} else {
+			super.onBackPressed();
+		}
+	}
+	
 	@Override
 	protected void onDestroy() {
 		//
@@ -250,43 +277,67 @@ public class MainActivity extends Activity {
 		locFollow = false;
 		//
 		mBaiduMap.setMyLocationEnabled(false);
+		imgLoc.setImageResource(R.drawable.main_location);
 		insertSectionData();
+		
 		mMapView.onDestroy();
 		mMapView = null;
 		super.onDestroy();
 	}
 	
-	private void functionList(int position) {
-		if(position == 0) {
+	private boolean testDataSubmited() {
+		boolean result = false;
+		ArrayList<SpotPointsModel> unsubListSpot = new ArrayList<SpotPointsModel>();
+		if(daoSpotPoints != null) {
+			CloseableIterator<SpotPointsModel> iterator = daoSpotPoints.iterator();
+			
+			while (iterator.hasNext()) {
+				SpotPointsModel entity = iterator.next();
+				if(!entity.isSubmited() && entity.isColleted()) {
+					unsubListSpot.add(entity);
+				}
+			}
+		}
+		ArrayList<SectionPointsModel> unsubListSection = new ArrayList<SectionPointsModel>();
+		if(daoSectionPoints != null) {
+			CloseableIterator<SectionPointsModel> iterator = daoSectionPoints.iterator();
+			
+			while (iterator.hasNext()) {
+				SectionPointsModel entity = iterator.next();
+				if(!entity.isSubmited()) {
+					unsubListSection.add(entity);
+				}
+			}
+		}
+		if(unsubListSection.size()>0 || unsubListSpot.size()>0) {
+			result = true;
 			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
-			.setTitle("收集路段内含点列表")
+			.setTitle("警告")
+			.setMessage("有未提交数据，是否继续推出？")
 			.setPositiveButton("确定", new DialogInterface.OnClickListener() {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					locFollow = true;
-//					initDynamicLine(listPoints.get(which).getAspotId(), 
-//							listPoints.get(which).getBspotId());
-					insertSection = new SectionPointsModel();
-//					insertSection.setScenicLinename(listPoints.get(which).getScenicLinename());
-					insertSection.setScenicId(scenicId);
-					ArrayList<Points> points = new ArrayList<Points>();
-					insertSection.setSectionPoints(points);
-					insertSection.setPointsNum(0);
-					mBaiduMap.setMyLocationEnabled(true);
-					mLocClient.requestLocation();
-					imgLoc.setImageResource(R.drawable.pause);
-					
+					Application app = (Application) getApplication();
+					app.exit();
 				}
 			})
 			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
+					dialog.dismiss();
 				}
 			}).create();
 			alertDialog.show();
-			
+		}
+		
+		return result;
+	}
+	
+	private void functionList(int position) {
+		if(position == 0) {
+			createCollectDialog();
 		} else if(position ==1) {
 			final ArrayList<SpotPointsModel> listSpotPoints = new ArrayList<SpotPointsModel>();
 			if(daoSpotPoints != null) {
@@ -294,7 +345,9 @@ public class MainActivity extends Activity {
 				
 				while (iterator.hasNext()) {
 					SpotPointsModel entity = iterator.next();
-					listSpotPoints.add(entity);
+					if(entity.isColleted()) {
+						listSpotPoints.add(entity);
+					}
 				}
 			}
 			if(listSpotPoints.size() == 0) {
@@ -380,80 +433,122 @@ public class MainActivity extends Activity {
 			sectionPointsView.setAlertDialog(alertDialog);
 			alertDialog.show();
 		} else if(position == 3) {
-			HashMap<String, String> map = searchLine();
-			if(!map.isEmpty()) {
-				final String[] items = new String[map.size()];
-				final String[] itemsValue = new String[map.size()];
-				int i = 0;
-				for(String key: map.keySet()) {
-					items[i] = key;
-					itemsValue[i] = map.get(key);
-					i++;
-				}
-				Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
-				.setTitle("绘制路段列表")
-				.setItems(itemsValue, new DialogInterface.OnClickListener() {
-					
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						try {
-							List<SectionPointsModel> tempModel = new ArrayList<SectionPointsModel>();
-							if(items[which].equals("0")) {
-								tempModel=daoSectionPoints.queryForEq("scenicLineId", null);
-							} else {
-								tempModel=daoSectionPoints.queryForEq("scenicLineId", items[which]);
+			final String[] items = {"0","1","2"};
+			final String[] itemsValue = {"全部","景点","路段"};
+			Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
+			.setTitle("绘制物标")
+			.setItems(itemsValue, new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					ArrayList<SpotPointsModel> listSpotPoints = new ArrayList<SpotPointsModel>();
+					if(daoSpotPoints != null) {
+						CloseableIterator<SpotPointsModel> iterator = daoSpotPoints.iterator();
+						
+						while (iterator.hasNext()) {
+							SpotPointsModel entity = iterator.next();
+							if(entity.isColleted()) {
+								listSpotPoints.add(entity);
 							}
-							if(tempModel.size() > 0) {
-								for(SectionPointsModel each:tempModel) {
-									if(!items[which].equals("0")) {
-//										initDynamicLine(each.getAspotId(), each.getBspotId());
-									}
-									if(each.getSectionPoints().size()>1) {
-										Points initPoint = null;
-										for(Points eachPoints:each.getSectionPoints()) {
-											DrawToolUtil.drawDynamicLine(initPoint, eachPoints, mBaiduMap);
-											initPoint = new Points(eachPoints.getAbsoluteLongitude(), 
-													eachPoints.getAbsoluteLatitude(), eachPoints.getAbsoluteAltitude());
-										}
-									}
-								}
-							}
-						} catch (SQLException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
 						}
 					}
-				})
-				.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-					
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
+					ArrayList<SectionPointsModel> listSectionPoints = new ArrayList<SectionPointsModel>();
+					if(daoSectionPoints != null) {
+						CloseableIterator<SectionPointsModel> iterator = daoSectionPoints.iterator();
+						
+						while (iterator.hasNext()) {
+							SectionPointsModel entity = iterator.next();
+							listSectionPoints.add(entity);
+						}
 					}
-				}).create();
-				alertDialog.show();
-			} else {
-				Toast.makeText(MainActivity.this, "无路段数据", Toast.LENGTH_SHORT).show();
-			}
+					if(items[which].equals("0")) {
+						drawPoint(listSpotPoints);
+						drawLine(listSectionPoints);
+					} else if(items[which].equals("1")) {
+						drawPoint(listSpotPoints);
+					} else if(items[which].equals("2")) {
+						drawLine(listSectionPoints);
+					}
+				}
+			})
+			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+				
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+				}
+			}).create();
+			alertDialog.show();
 		}
 	}
 	
-	//寻找Line和未加入任何Line的Section
-	public HashMap<String, String> searchLine() {
-		HashMap<String, String> result = new HashMap<String, String>();
-		if (daoSectionPoints != null) {
-			CloseableIterator<SectionPointsModel> iterator = daoSectionPoints.iterator();
-			
-			while (iterator.hasNext()) {
-				SectionPointsModel entity = iterator.next();
-				if(entity.getScenicLineId() == null) {
-					result.put("0", "其他");
-				} else if(!result.containsKey(entity.getScenicLineId())) {
-					result.put(entity.getScenicLineId(), entity.getScenicLinename());
+	private void drawLine(ArrayList<SectionPointsModel> listSectionPoints) {
+		if(listSectionPoints.size()>0) {
+			for(SectionPointsModel each:listSectionPoints) {//路段
+				if(each.getSectionPoints().size()>1) {//点
+					DrawToolUtil.drawDynamicLineName(each.getSectionPoints(),
+							each.getScenicLinename(), mBaiduMap);
+					Points initPoint = null;
+					for(Points eachPoints:each.getSectionPoints()) {
+						DrawToolUtil.drawDynamicLine(initPoint, eachPoints, mBaiduMap);
+						initPoint = new Points(eachPoints.getAbsoluteLongitude(), 
+								eachPoints.getAbsoluteLatitude(), eachPoints.getAbsoluteAltitude());
+					}
 				}
-
 			}
+		} else {
+			Toast.makeText(MainActivity.this, "没有收集路段数据", Toast.LENGTH_SHORT).show();
 		}
-		return result;
+	}
+	private void drawPoint(ArrayList<SpotPointsModel> listSpotPoints) {
+		if(listSpotPoints.size()>0) {
+			for(SpotPointsModel each:listSpotPoints) {
+				if(each.getSpotPoints()!=null&&each.getSpotPoints().size()>0) {
+					DrawToolUtil.drawSinglePoint(each.getSpotPoints().get(0),
+							each.getScenicspotName(), mBaiduMap);
+				}
+			}
+		} else {
+			Toast.makeText(MainActivity.this, "没有收集点数据", Toast.LENGTH_SHORT).show();
+		}
+	}
+	
+	private void createCollectDialog() {
+		LayoutInflater inflater = (LayoutInflater) LayoutInflater.from(this);  
+		View sectionName = inflater.inflate(R.layout.dialog_section_name, null); 
+		final EditText sectionNameEdit = (EditText)sectionName.findViewById(R.id.section_name);
+		Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
+		.setTitle("收集路段内含点列表")
+		.setMessage("是否开始收集路段内含点列表？")
+		.setView(sectionName)
+		.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				if(sectionNameEdit.getText().toString().equals("")) {
+					Toast.makeText(MainActivity.this, "请输入路线点", Toast.LENGTH_SHORT).show();
+					return;
+				}
+				locFollow = true;
+				insertSection = new SectionPointsModel();
+				insertSection.setScenicLinename(sectionNameEdit.getText().toString());
+				insertSection.setScenicId(scenicId);
+				ArrayList<Points> points = new ArrayList<Points>();
+				insertSection.setSectionPoints(points);
+				insertSection.setPointsNum(0);
+				mBaiduMap.setMyLocationEnabled(true);
+				mLocClient.start();
+				mLocClient.requestLocation();
+				imgLoc.setImageResource(R.drawable.pause);
+				
+			}
+		})
+		.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+			
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+			}
+		}).create();
+		alertDialog.show();
 	}
 	
 	class SubmitDataTask extends AsyncTask<ArrayList<SpotPointsModel>, Void, Integer> {
@@ -600,6 +695,7 @@ public class MainActivity extends Activity {
 							public void onClick(DialogInterface dialog, int which) {
 								scenicId = lists.get(which).getScenicId();
 								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
+								imgLoc.setVisibility(View.VISIBLE);
 								initRayMenu();
 							}
 						})
@@ -607,6 +703,7 @@ public class MainActivity extends Activity {
 						dialogChooseArea.show();
 						//此标志在if进入之后的一开始就赋值为false，但是放在此处保证获取数据之后才置为false
 						isFirstLoc = false;
+						mLocClient.stop();
  					}
 				}
 			}
@@ -618,6 +715,7 @@ public class MainActivity extends Activity {
 				mBaiduMap.setMapStatus(u);
 				
 				addOverlay(ll);
+				mLocClient.stop();
 			}
 			if(locFollow) {
 				Toast.makeText(MainActivity.this, "数据："+ location.getLatitude()+","
@@ -665,22 +763,38 @@ public class MainActivity extends Activity {
 			}
 			insertSection.setSubmited(false);
 			try {
-				boolean isHave=false;
-				List<SectionPointsModel> tempModel=daoSectionPoints.queryForEq("linesectionId", insertSection.getLinesectionId());
-				for(int i=0;i<tempModel.size();i++){
-					if(tempModel.get(i).getLinesectionId().equals(insertSection.getLinesectionId()))
-					{isHave=true;
-					tempModel.get(i).setSectionPoints(insertSection.getSectionPoints());
-					tempModel.get(i).setPointsNum(insertSection.getPointsNum());
-					daoSectionPoints.createOrUpdate(tempModel.get(i));
-					break;}
-				}
-				if(!isHave){
+				final List<SectionPointsModel> tempModel=daoSectionPoints.queryForEq("scenicLinename", insertSection.getScenicLinename());
+				if(tempModel.size() > 0) {
+
+					Dialog alertDialog = new AlertDialog.Builder(MainActivity.this)
+					.setTitle("提示")
+					.setMessage("该路线数据已经收集过")
+					.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							tempModel.get(0).setSectionPoints(insertSection.getSectionPoints());
+							tempModel.get(0).setPointsNum(insertSection.getPointsNum());
+							tempModel.get(0).setSubmited(false);
+							try {
+								daoSectionPoints.createOrUpdate(tempModel.get(0));
+								Toast.makeText(MainActivity.this, "已有该本地数据,修改成功",Toast.LENGTH_SHORT).show();
+							} catch (SQLException e) {
+								e.printStackTrace();
+							}
+						}
+					})
+					.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							return;
+						}
+					}).create();
+					alertDialog.show();
+				} else {
 					daoSectionPoints.create(insertSection);
 					Toast.makeText(MainActivity.this, "添加成功", Toast.LENGTH_SHORT).show();
-				}
-				else{
-					Toast.makeText(MainActivity.this, "已有该本地数据,修改成功",Toast.LENGTH_SHORT).show();
 				}
 				
 			} catch (SQLException e) {
@@ -690,7 +804,7 @@ public class MainActivity extends Activity {
 		}
 
 	}
-
+	
 	public ArrayList<ScenicModel> getListScenics() {
 		return listScenics;
 	}

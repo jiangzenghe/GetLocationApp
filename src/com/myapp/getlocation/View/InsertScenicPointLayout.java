@@ -26,11 +26,11 @@ import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.entity.Points;
-import com.myapp.getlocation.entity.ScenicSpotModel;
 import com.myapp.getlocation.entity.SpotPointsModel;
 
 public class InsertScenicPointLayout extends LinearLayout {
 
+	private static String CONSTANTS_MATCH_ADD = " --- 已采集";
 	private View layout;
 	private Context context;
 	private LayoutInflater mInflate;
@@ -45,18 +45,20 @@ public class InsertScenicPointLayout extends LinearLayout {
 	private String[] typeItems;//key 类型
 	private String[] typeValueItems;//value 类型
 	private String[] items;//景点列表（标识是否已采集）
+	private String scenicId;
 	
-	private Dao<ScenicSpotModel, Integer> daoSpot;
+//	private Dao<ScenicSpotModel, Integer> daoSpot;
 	private Dao<SpotPointsModel, Integer> daoSpotPoints;
-	private ArrayList<ScenicSpotModel> listScenicSpots;
+	private ArrayList<SpotPointsModel> listScenicSpots;
 	private LatLng latLng;
-	public InsertScenicPointLayout(Context context) {
-		this(context, null);
+	public InsertScenicPointLayout(Context context, String scenicId) {
+		this(context, null, scenicId);
 	}
 
-	public InsertScenicPointLayout(final Context context, AttributeSet attrs) {
+	public InsertScenicPointLayout(final Context context, AttributeSet attrs, String scenicId) {
 		super(context, attrs);
 		this.context = context;
+		this.scenicId = scenicId;
 
 		mInflate = LayoutInflater.from(this.context);
 		layout = mInflate.inflate(R.layout.layout_scenicpoint_add, null);
@@ -73,16 +75,20 @@ public class InsertScenicPointLayout extends LinearLayout {
         Button cancelBtn = (Button) this.findViewById(R.id.button_cancel);
         Button okBtn = (Button) this.findViewById(R.id.button_ok);
         
-        listScenicSpots = new ArrayList<ScenicSpotModel>();
+        listScenicSpots = new ArrayList<SpotPointsModel>();
         okBtn.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 //				Toast.makeText(context, "sure", Toast.LENGTH_SHORT).show();
-				if(scenicSpotTxt.getText().toString().equals("") ||
-						scenicSpotIdTxt.getText().toString().equals("")) {
+				if(scenicSpotTxt.getText().toString().equals("")) {
 					Toast.makeText(context, "请选择景点", Toast.LENGTH_SHORT).show();
+					return;
+				}
+				if(latitudeTxt.getText().toString().equals("0") 
+						|| longitudeTxt.getText().toString().equals("0")) {
+					Toast.makeText(context, "未获取到正确的经纬度值", Toast.LENGTH_SHORT).show();
 					return;
 				}
 				insertData();
@@ -121,7 +127,7 @@ public class InsertScenicPointLayout extends LinearLayout {
 							scenicSpotIdTxt.setText("");
 						} else {
 							scenicSpotTxt.setText(listScenicSpots.get(0).getScenicspotName());
-							scenicSpotIdTxt.setText(listScenicSpots.get(0).getSpotId());
+//							scenicSpotIdTxt.setText(listScenicSpots.get(0).getSpotId());
 						}
 					}
 				})
@@ -139,40 +145,13 @@ public class InsertScenicPointLayout extends LinearLayout {
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 					long arg3) {
-				// TODO Auto-generated method stub
-				
+				String obj = (String)arg0.getItemAtPosition(arg2);
+				if(obj.contains(CONSTANTS_MATCH_ADD)) {
+					scenicSpotTxt.setText(obj.replace(CONSTANTS_MATCH_ADD, ""));
+				}
 			}
         	
         });
-//        scenicSpotTxt.setOnClickListener(new View.OnClickListener() {
-//			
-//			@Override
-//			public void onClick(View v) {
-//				searchSpotsData(strType);
-//				if(listScenicSpots.size() > 0) {
-//					
-//					Dialog alertDialog = new AlertDialog.Builder(context)
-//					.setTitle("景点列表")
-//					.setItems(items, new DialogInterface.OnClickListener() {
-//						
-//						@Override
-//						public void onClick(DialogInterface dialog, int which) {
-//							scenicSpotTxt.setText(items[which]);
-//							scenicSpotIdTxt.setText(listScenicSpots.get(which).getSpotId());
-//						}
-//					})
-//					.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-//						
-//						@Override
-//						public void onClick(DialogInterface dialog, int which) {
-//						}
-//					}).create();
-//					alertDialog.show();				
-//				} else {
-//					Toast.makeText(context, "抱歉，无数据", Toast.LENGTH_SHORT).show();
-//				}
-//			}
-//		});
 	}
 	
 	private void insertData() {
@@ -183,12 +162,12 @@ public class InsertScenicPointLayout extends LinearLayout {
 		double longitude = Double.parseDouble(longitudeTxt.getText().toString().equals("")?"0":longitudeTxt.getText().toString());
 		double latitude = Double.parseDouble(latitudeTxt.getText().toString().equals("")?"0":latitudeTxt.getText().toString());
 		double altitude = Double.parseDouble(altitudeTxt.getText().toString().equals("")?"0":altitudeTxt.getText().toString());
-		Points point = new Points(longitude, latitude, altitude);
+		final Points point = new Points(longitude, latitude, altitude);
 		
-		entity.setSpotId(scenicSpotIdTxt.getText().toString());
+//		entity.setSpotId(scenicSpotIdTxt.getText().toString());
 		entity.setSpotType(strType);
-//		entity.setScenicspotName(scenicSpotTxt.getText().toString());
-//		entity.setScenicId(scenicId);
+		entity.setScenicspotName(scenicSpotTxt.getText().toString());
+		entity.setScenicId(scenicId);
 		entity.setPointsNum(1);
 			
 		ArrayList<Points> points = new ArrayList<Points>();
@@ -196,28 +175,57 @@ public class InsertScenicPointLayout extends LinearLayout {
 		entity.setSpotPoints(points);
 		entity.setSubmited(false);
 		try {
-			boolean isHave=false;
-			List<SpotPointsModel> tempModel=daoSpotPoints.queryForEq("spotId", entity.getSpotId());
-			for(int i=0;i<tempModel.size();i++){
-				if(tempModel.get(i).getSpotId().equals(entity.getSpotId()))
-				{isHave=true;
-				tempModel.get(i).getSpotPoints().add(point);
-				tempModel.get(i).setPointsNum(tempModel.get(i).getPointsNum() + 1);
-				tempModel.get(i).setSubmited(false);
-				daoSpotPoints.createOrUpdate(tempModel.get(i));
-				break;}
-			}
-			if(!isHave){
-				entity.setScenicspotName(scenicSpotTxt.getText().toString());
+			final List<SpotPointsModel> tempModel=daoSpotPoints.queryForEq("scenicspotName", entity.getScenicspotName());
+			if(tempModel.size() > 0) {
+				if(tempModel.get(0).isColleted()) {
+					Dialog alertDialog = new AlertDialog.Builder(context)
+					.setTitle("提示")
+					.setMessage("该点数据已经收集过")
+					.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							tempModel.get(0).getSpotPoints().clear();
+							tempModel.get(0).getSpotPoints().add(point);
+							tempModel.get(0).setPointsNum(1);
+							tempModel.get(0).setSubmited(false);
+							try {
+								daoSpotPoints.createOrUpdate(tempModel.get(0));
+								Toast.makeText(context, "已有该本地数据,修改成功",Toast.LENGTH_SHORT).show();
+								mBaiduMap.hideInfoWindow();
+							} catch (SQLException e) {
+								e.printStackTrace();
+							}
+						}
+					})
+					.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							return;
+						}
+					}).create();
+					alertDialog.show();
+				} else {
+					tempModel.get(0).getSpotPoints().clear();
+					tempModel.get(0).getSpotPoints().add(point);
+					tempModel.get(0).setPointsNum(1);
+					tempModel.get(0).setSubmited(false);
+					try {
+						daoSpotPoints.createOrUpdate(tempModel.get(0));
+						Toast.makeText(context, "添加成功",Toast.LENGTH_SHORT).show();
+						mBaiduMap.hideInfoWindow();
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+				
+			} else {
+				entity.setSpotId("");
 				daoSpotPoints.create(entity);
 				Toast.makeText(context, "添加成功", Toast.LENGTH_SHORT).show();
 				mBaiduMap.hideInfoWindow();
 			}
-			else{
-				Toast.makeText(context, "已有该本地数据,修改成功",Toast.LENGTH_SHORT).show();
-				mBaiduMap.hideInfoWindow();
-			}
-			
 
 		} catch (SQLException e) {
 			Toast.makeText(context, "添加本地数据错误",Toast.LENGTH_SHORT).show();
@@ -242,16 +250,13 @@ public class InsertScenicPointLayout extends LinearLayout {
 	private void searchSpotsData(String index) {
 		items = null;
 		listScenicSpots.clear();
-		if (daoSpot != null&&daoSpotPoints!=null) {
+		if (daoSpotPoints!=null) {
 			try {
-				List<ScenicSpotModel> tempModel=daoSpot.queryForEq("spotType", index);
+				List<SpotPointsModel> tempModel=daoSpotPoints.queryForEq("spotType", index);
 				items = new String[tempModel.size()];
-				for(ScenicSpotModel each : tempModel) {
+				for(SpotPointsModel each : tempModel) {
 					
-					ScenicSpotModel entity = new ScenicSpotModel();
-					entity.setAbsoluteAltitude(each.getAbsoluteAltitude());
-					entity.setAbsoluteLatitude(each.getAbsoluteLatitude());
-					entity.setAbsoluteLongitude(each.getAbsoluteLongitude());
+					SpotPointsModel entity = new SpotPointsModel();
 					entity.setId(each.getId());
 					entity.setScenicId(each.getScenicId());
 					entity.setScenicspotName(each.getScenicspotName());
@@ -259,14 +264,13 @@ public class InsertScenicPointLayout extends LinearLayout {
 					entity.setSpotType(each.getSpotType());
 					
 					items[tempModel.indexOf(each)] = each.getScenicspotName();
-					List<SpotPointsModel> tempagaModel=daoSpotPoints.queryForEq("spotId", each.getSpotId());
-					if(tempagaModel.size() > 0) {
-						items[tempModel.indexOf(each)] += "  ------  已采集";
+					if(each.isColleted()) {
+						items[tempModel.indexOf(each)] += CONSTANTS_MATCH_ADD;
 					}
 					listScenicSpots.add(entity);
-					ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, R.layout.layout_list_item, items);//配置Adaptor
-					scenicSpotTxt.setAdapter(adapter);
 				}
+				ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, R.layout.layout_list_item, items);//配置Adaptor
+				scenicSpotTxt.setAdapter(adapter);
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -307,14 +311,6 @@ public class InsertScenicPointLayout extends LinearLayout {
 
 	public void setmBaiduMap(BaiduMap mBaiduMap) {
 		this.mBaiduMap = mBaiduMap;
-	}
-
-	public Dao<ScenicSpotModel, Integer> getDaoSpot() {
-		return daoSpot;
-	}
-
-	public void setDaoSpot(Dao<ScenicSpotModel, Integer> daoSpot) {
-		this.daoSpot = daoSpot;
 	}
 
 	public Dao<SpotPointsModel, Integer> getDaoSpotPoints() {

@@ -37,6 +37,7 @@ import com.myapp.getlocation.adapter.ClassAttachmentImpl;
 import com.myapp.getlocation.adapter.IAttachment;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.SectionPointsModel;
+import com.myapp.getlocation.util.DrawToolUtil;
 
 /**
  * 
@@ -135,37 +136,14 @@ public class ScenicSectionPointView extends LinearLayout {
 						mBaiduMap.clear();
 						
 						ArrayList<Points> points = bean.getSectionPoints();
-						if (points.size() == 0) return true;						
-						List<LatLng> pts = new ArrayList<LatLng>(); 
-						LatLng pointStar = new LatLng(points.get(0).getAbsoluteLatitude() + 0.001, 
-								points.get(0).getAbsoluteLongitude());
-						OverlayOptions textOption = new TextOptions()  
-					    .bgColor(0xAAFFFF00)  
-					    .fontSize(24)  
-					    .fontColor(0xFFFF00FF)  
-					    .text(bean.getAspotName()+"-"+bean.getBspotName())
-					    .position(pointStar);  
-						//在地图上添加该文字对象并显示  
-						mBaiduMap.addOverlay(textOption);
-						MapStatusUpdate arg0 = MapStatusUpdateFactory.newLatLng(pointStar);
+						if (points.size() == 0) return true;	
+						DrawToolUtil.drawDynamicLineName(points, bean.getScenicLinename(), mBaiduMap);
+						int index = points.size()/2 + 1;
+						Points point = points.get(index);
+						LatLng center = new LatLng(point.getAbsoluteLatitude(), point.getAbsoluteLongitude());
+						MapStatusUpdate arg0 = MapStatusUpdateFactory.newLatLng(center);
 						mBaiduMap.animateMapStatus(arg0);
 						
-						for(Points each : points) {//俩个点一样，就看不到线
-							LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());//test
-							if(point.latitude != 0 && point.longitude != 0) {
-								pts.add(point);
-							}
-						}
-//						pts.add(new LatLng(points.get(0).getAbsoluteLatitude(), points.get(0).getAbsoluteLongitude()+0.1));//test
-						if(pts.size() >=2 && pts.size() <10000) {
-							//构建用于绘制多边形的Option对象  
-							OverlayOptions polygonOption = new PolylineOptions()  
-							.width(8)
-							.color(0xAAFF0000)
-							.points(pts);
-							//在地图上添加Option，用于显示  
-							mBaiduMap.addOverlay(polygonOption);
-						}
 						alertDialog.dismiss();
 						return true;//
 					}
@@ -188,6 +166,9 @@ public class ScenicSectionPointView extends LinearLayout {
 									if(daoSectionPoints == null) {
 										return;
 									}
+									if(bean.isSubmited()) {
+										//如果已经提交，需要添加针对服务端的删除处理
+									}
 									daoSectionPoints.deleteById(bean.getId());
 									alertDialog.dismiss();
 								} catch (SQLException e) {
@@ -205,7 +186,7 @@ public class ScenicSectionPointView extends LinearLayout {
 					}
 				});
 				txtViewId.setText(bean.getLinesectionId());
-				txtViewName.setText(bean.getScenicLinename()+":"+bean.getAspotName()+"-"+bean.getBspotName());
+				txtViewName.setText(bean.getScenicLinename());
 				txtViewNum.setText(bean.getPointsNum()+"");
 				String subString = bean.isSubmited()?"已提交":"未提交";
 				txtSubmit.setText(subString);

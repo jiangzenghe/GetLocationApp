@@ -37,6 +37,7 @@ import com.myapp.getlocation.adapter.ClassAttachmentImpl;
 import com.myapp.getlocation.adapter.IAttachment;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.SpotPointsModel;
+import com.myapp.getlocation.util.DrawToolUtil;
 
 /**
  * 
@@ -136,31 +137,13 @@ public class ScenicPointListView extends LinearLayout {
 						mBaiduMap.clear();
 						ArrayList<Points> points = bean.getSpotPoints();
 						if(points.size() == 0) return true;
-						double sumLatitude = 0.0;
-						double sumLongitude = 0.0;
 						for(Points each : points) {
-							sumLatitude += each.getAbsoluteLatitude();
-							sumLongitude += each.getAbsoluteLongitude();
+							DrawToolUtil.drawSinglePoint(each, bean.getScenicspotName(), mBaiduMap);
 							LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());
-							//构建用于绘制point的Option对象  
-							OverlayOptions dotOption = new DotOptions()  
-							.center(point)
-							.color(Color.parseColor("#FF0000"));
-							//在地图上添加Option，用于显示  
-							mBaiduMap.addOverlay(dotOption);
+							MapStatusUpdate arg0 = MapStatusUpdateFactory.newLatLng(point);
+							mBaiduMap.animateMapStatus(arg0);
 						}
-						LatLng pointAvg = new LatLng(sumLatitude/points.size() + 0.001, 
-								sumLongitude/points.size());
-						OverlayOptions textOption = new TextOptions()  
-					    .bgColor(0xAAFFFF00)  
-					    .fontSize(24)  
-					    .fontColor(0xFFFF00FF)  
-					    .text(bean.getScenicspotName())
-					    .position(pointAvg);  
-						//在地图上添加该文字对象并显示  
-						mBaiduMap.addOverlay(textOption);
-						MapStatusUpdate arg0 = MapStatusUpdateFactory.newLatLng(pointAvg);
-						mBaiduMap.animateMapStatus(arg0);
+						
 						alertDialog.dismiss();
 						return true;//
 					}
@@ -182,6 +165,9 @@ public class ScenicPointListView extends LinearLayout {
 									Dao<SpotPointsModel, Integer> daoSpotPoints = activity.getEntityHelper().getDao(SpotPointsModel.class);
 									if(daoSpotPoints == null) {
 										return;
+									}
+									if(bean.isSubmited()) {
+										//如果已经提交，需要添加针对服务端的删除处理
 									}
 									daoSpotPoints.deleteById(bean.getId());
 									alertDialog.dismiss();

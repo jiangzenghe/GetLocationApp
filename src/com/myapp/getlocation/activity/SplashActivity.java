@@ -5,27 +5,29 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.zip.ZipException;
 
 import org.apache.http.HttpResponse;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.R;
 import com.myapp.getlocation.db.ScenicDataInitHelper;
-import com.myapp.getlocation.entity.ScenicModel;
 import com.myapp.getlocation.http.HttpServiceHandler;
 import com.myapp.getlocation.http.HttpServiceProgressWrapper.ProgressDialogHandler;
 import com.myapp.getlocation.util.FileUtil;
 import com.myapp.getlocation.util.HttpUtil;
+import com.myapp.getlocation.util.ZipUtil;
 
 /**
  *该类是启动Activity 在该类中应在意图对象中附加相关信息标志
@@ -80,8 +82,19 @@ public class SplashActivity extends Activity {
 
 		@Override
 		public void onHttpServiceFinished(HttpResponse response) {
-			dataInitHelper.downAndParseData();
-			sleep();
+			try {
+				//根据路径解压缩下载zip文件
+				ZipUtil.upZipFile(new File(Environment.getExternalStorageDirectory() + "/" + 
+						Constants.SCENIC_ROUTER_FILE_PATH + Constants.SCENIC + Constants.ALL_SCENIC_ZIP), 
+						Environment.getExternalStorageDirectory() + "/" + Constants.SCENIC_ROUTER_FILE_PATH);
+				sleep();
+			} catch (ZipException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		@Override
@@ -105,26 +118,31 @@ public class SplashActivity extends Activity {
 		}
 		
 		boolean wifiEnable = HttpUtil.isNetworkAvailable(SplashActivity.this);
-		if(!wifiEnable) {
-			Toast.makeText(SplashActivity.this, "下载大文件，请务必打开wifi以节省流量", Toast.LENGTH_SHORT).show();
-			return;
-		}
+//		if(!wifiEnable) {
+//			Toast.makeText(SplashActivity.this, "下载大文件，请务必打开wifi以节省流量", Toast.LENGTH_SHORT).show();
+//			return;
+//		}
 		
 		dataInitHelper = new ScenicDataInitHelper(SplashActivity.this);
 		dataInitHelper.onCreate();
 		
+		Toast.makeText(this, "加载数据中....", Toast.LENGTH_SHORT).show();
 		// 远程连接时，使用进度对话框
 		ProgressDialog defaultDialog = new ProgressDialog(this);
 		defaultDialog.setMessage("等待中");
 		ProgressDialogHandler handler = new ProgressDialogHandler(
 				defaultDialog);
 		DownAllScenicFileHandler downHander = new DownAllScenicFileHandler();
-//		sleep();
-		try {
-			this.getProgressHttpService(handler).callPostService(Constants.API_ALL_SCENIC_DOWNLOAD, downHander);
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		String json = FileUtil.readFile(Constants.SCENIC_IMAGE_FILE_PATH + Constants.SCENIC + Constants.ALL_SCENIC_JSON);
+		if(!TextUtils.isEmpty(json)) {
+			sleep();
+		} else {
+			try {
+				this.getProgressHttpService(handler).callPostService(Constants.API_ALL_SCENIC_DOWNLOAD, downHander);
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 	}
@@ -146,6 +164,7 @@ public class SplashActivity extends Activity {
 			Intent intent = null;
 			try {
 				intent = makeTargetIntent();
+				dataInitHelper.parseData();
 			} catch (ClassNotFoundException e) {
 				Log.e(TAG, e.getMessage());
 				return;
@@ -156,14 +175,15 @@ public class SplashActivity extends Activity {
 			new Thread(){
 				@Override
 				public void run() {
-//					try {
-//						Thread.sleep(getSleepTime() - interval);
-//					} catch (InterruptedException e) {
-//						e.printStackTrace();
-//					}
+					try {
+						Thread.sleep(getSleepTime() - interval);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 					Intent intent = null;
 					try {
 						intent = makeTargetIntent();
+						dataInitHelper.parseData();
 					} catch (ClassNotFoundException e) {
 						Log.e(TAG, e.getMessage());
 						return;
