@@ -82,20 +82,23 @@ public class DrawToolUtil {
 	public static void drawSinglePoint(Points point, String name, BaiduMap mBaiduMap) {
 		LatLng pointLabel = new LatLng(point.getAbsoluteLatitude(), 
 				point.getAbsoluteLongitude());
-		OverlayOptions textOption = new TextOptions()  
-	    .bgColor(0xAAFFFF00)  
-	    .fontSize(24)  
-	    .fontColor(0xFFFF00FF)  
-	    .text(name)
-	    .position(pointLabel);  
-		//在地图上添加该文字对象并显示  
-		mBaiduMap.addOverlay(textOption);
 		//构建用于绘制point的Option对象  
 		OverlayOptions dotOption = new DotOptions()  
 		.center(pointLabel)
-		.color(Color.parseColor("#FFF000"));
+		.color(0xAAFF0000);
+//		.color(Color.parseColor("#FFF000"));
+		
 		//在地图上添加Option，用于显示  
 		mBaiduMap.addOverlay(dotOption);
+//		OverlayOptions textOption = new TextOptions()  
+//		.bgColor(0xAAFFFF00) 
+//		.fontSize(24)  
+//		.fontColor(0xFFFF00FF)  
+//		.text(name)
+//		.zIndex(9)
+//		.position(pointLabel);  
+//		//在地图上添加该文字对象并显示  
+//		mBaiduMap.addOverlay(textOption);
 	}
    
 	public static void drawSinglePoint(ArrayList<Points> points, String name, BaiduMap mBaiduMap) {

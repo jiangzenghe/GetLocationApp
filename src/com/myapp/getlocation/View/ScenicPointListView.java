@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.DotOptions;
+import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.OverlayOptions;
@@ -140,6 +141,14 @@ public class ScenicPointListView extends LinearLayout {
 						for(Points each : points) {
 							DrawToolUtil.drawSinglePoint(each, bean.getScenicspotName(), mBaiduMap);
 							LatLng point = new LatLng(each.getAbsoluteLatitude(), each.getAbsoluteLongitude());
+							//创建InfoWindow展示的view  
+							TextView text = new TextView(context.getApplicationContext());  
+							text.setTextColor(0xAAFF0000);
+							text.setText(bean.getScenicspotName());
+							//创建InfoWindow , 传入 view， 地理坐标， y 轴偏移量 
+							InfoWindow mInfoWindow = new InfoWindow(text, point, -10);  
+							//显示InfoWindow  
+							mBaiduMap.showInfoWindow(mInfoWindow);
 							MapStatusUpdate arg0 = MapStatusUpdateFactory.newLatLng(point);
 							mBaiduMap.animateMapStatus(arg0);
 						}

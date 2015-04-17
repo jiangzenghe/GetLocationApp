@@ -9,7 +9,6 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.AsyncTask;
@@ -40,6 +39,7 @@ import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
+import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.capricorn.RayMenu;
 import com.j256.ormlite.dao.CloseableIterator;
@@ -114,14 +114,9 @@ public class MainActivity extends Activity {
 		
 		dataInitHelper = new ScenicDataInitHelper(MainActivity.this);
 		dataInitHelper.onCreate();
-//			daoSpotPoints = getEntityHelper().getDao(SpotPointsModel.class);
 		daoSpotPoints = dataInitHelper.getDaoSpotPoints();
 		daoSectionPoints = dataInitHelper.getDaoSectionPoints();
 		listScenics = dataInitHelper.searchScenicsData();
-		soundPool = new SoundPool(1, // maxStreams参数，该参数为设置同时能够播放多少音效
-            AudioManager.STREAM_MUSIC, // streamType参数，该参数设置音频类型，在游戏中通常设置为：STREAM_MUSIC
-            0 // srcQuality参数，该参数设置音频文件的质量，目前还没有效果，设置为0为默认值。
-			);
 		
 		Log.e("Main oncreate", "Main oncreate");
 		//
@@ -131,7 +126,7 @@ public class MainActivity extends Activity {
 		option.setOpenGps(true);//
 		option.setAddrType("all");
 		option.setCoorType("bd09ll"); //
-		option.setScanSpan(3000);
+		option.setScanSpan(10000);
 		mLocClient.setLocOption(option);
 		mLocClient.start();
 		
@@ -142,11 +137,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				if(locFollow) {
-					locFollow = false;
-					mBaiduMap.setMyLocationEnabled(false);
-					mLocClient.stop();
-					imgLoc.setImageResource(R.drawable.main_location);
-					insertSectionData();
+					stopCollectLine();
 				} else {
 					locByHand = true;
 					mBaiduMap.clear();
@@ -175,25 +166,21 @@ public class MainActivity extends Activity {
 			}
 		});
 		
-		scenicId = "221";
-//		dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
-		imgLoc.setVisibility(View.VISIBLE);
-		initRayMenu();
-		AudioManager am = (AudioManager) MainActivity.this
-                .getSystemService(Context.AUDIO_SERVICE);// 实例化AudioManager对象
-        float audioMaxVolumn = // 返回当前AudioManager对象的最大音量值
-        		am.getStreamMaxVolume(AudioManager.STREAM_MUSIC); 
-        float audioCurrentVolumn = am // 返回当前AudioManager对象的音量值
-                        .getStreamVolume(AudioManager.STREAM_MUSIC);
-        float volumnRatio = audioCurrentVolumn / audioMaxVolumn;
-		soundPool.play(soundPool.load(MainActivity.this, R.raw.dontpanic, 1), 
-				volumnRatio, volumnRatio, 1, 0, 1);
-		soundPool.release();
-		mLocClient.start();
-		mLocClient.requestLocation();
 	}
 
-	private void initRayMenu() {
+	private void stopCollectLine() {
+		Toast.makeText(MainActivity.this, "停止收集路线数据", Toast.LENGTH_SHORT).show();
+		locFollow = false;
+		mBaiduMap.setMyLocationEnabled(false);
+		mLocClient.stop();
+		imgLoc.setImageResource(R.drawable.main_location);
+		if(soundPool != null) {
+			soundPool.release();
+		}
+		insertSectionData();
+	}
+	
+	public void initRayMenu() {
 		RayMenu rayMenu = (RayMenu) findViewById(R.id.ray_menu);
         final int itemCount = ITEM_DRAWABLES.length;
 		for (int i = 0; i < itemCount; i++) {
@@ -207,40 +194,27 @@ public class MainActivity extends Activity {
 				public void onClick(View v) {
 					if(position == 0) {
 						if(locFollow) {
-							locFollow = false;
-							mBaiduMap.setMyLocationEnabled(false);
-							mLocClient.stop();
-							imgLoc.setImageResource(R.drawable.main_location);
-							insertSectionData();
+							stopCollectLine();
 							return;
 						}
 						
 						Toast.makeText(MainActivity.this, "收集路段内的点", Toast.LENGTH_SHORT).show();
 					} else if(position == 1) {
 						if(locFollow) {
-							locFollow = false;
-							mBaiduMap.setMyLocationEnabled(false);
-							mLocClient.stop();
-							imgLoc.setImageResource(R.drawable.main_location);
-							insertSectionData();
+							stopCollectLine();
+							return;
 						}
 						Toast.makeText(MainActivity.this, "提交已收集的景点", Toast.LENGTH_SHORT).show();
 					} else if(position == 2) {
 						if(locFollow) {
-							locFollow = false;
-							mBaiduMap.setMyLocationEnabled(false);
-							mLocClient.stop();
-							imgLoc.setImageResource(R.drawable.main_location);
-							insertSectionData();
+							stopCollectLine();
+							return;
 						}
 						Toast.makeText(MainActivity.this, "提交已收集的路段", Toast.LENGTH_SHORT).show();
 					} else if(position == 3) {
 						if(locFollow) {
-							locFollow = false;
-							mBaiduMap.setMyLocationEnabled(false);
-							mLocClient.stop();
-							imgLoc.setImageResource(R.drawable.main_location);
-							insertSectionData();
+							stopCollectLine();
+							return;
 						}
 						Toast.makeText(MainActivity.this, "绘制已收集的路段", Toast.LENGTH_SHORT).show();
 					}
@@ -260,11 +234,9 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onPause() {
 		mMapView.onPause();
-		locFollow = false;
-		mBaiduMap.setMyLocationEnabled(false);
-		mLocClient.stop();
-		imgLoc.setImageResource(R.drawable.main_location);
-		insertSectionData();
+		if(locFollow) {
+			stopCollectLine();
+		}
 		super.onPause();
 	}
 
@@ -294,13 +266,18 @@ public class MainActivity extends Activity {
 	
 	@Override
 	protected void onDestroy() {
-		//
+		if(locFollow) {
+			Toast.makeText(MainActivity.this, "停止收集路线数据", Toast.LENGTH_SHORT).show();
+			locFollow = false;
+			imgLoc.setImageResource(R.drawable.main_location);
+			if(soundPool != null) {
+				soundPool.release();
+			}
+			insertSectionData();
+			
+		}
 		mLocClient.stop();
-		locFollow = false;
-		//
 		mBaiduMap.setMyLocationEnabled(false);
-		imgLoc.setImageResource(R.drawable.main_location);
-		insertSectionData();
 		
 		mMapView.onDestroy();
 		mMapView = null;
@@ -463,6 +440,7 @@ public class MainActivity extends Activity {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
+					mBaiduMap.clear();
 					ArrayList<SpotPointsModel> listSpotPoints = new ArrayList<SpotPointsModel>();
 					if(daoSpotPoints != null) {
 						CloseableIterator<SpotPointsModel> iterator = daoSpotPoints.iterator();
@@ -509,12 +487,13 @@ public class MainActivity extends Activity {
 				if(each.getSectionPoints().size()>1) {//点
 					DrawToolUtil.drawDynamicLineName(each.getSectionPoints(),
 							each.getScenicLinename(), mBaiduMap);
-					Points initPoint = null;
-					for(Points eachPoints:each.getSectionPoints()) {
-						DrawToolUtil.drawDynamicLine(initPoint, eachPoints, mBaiduMap);
-						initPoint = new Points(eachPoints.getAbsoluteLongitude(), 
-								eachPoints.getAbsoluteLatitude(), eachPoints.getAbsoluteAltitude());
-					}
+					DrawToolUtil.drawDynamicLine(each.getSectionPoints(), mBaiduMap);
+//					Points initPoint = null;
+//					for(Points eachPoints:each.getSectionPoints()) {
+//						DrawToolUtil.drawDynamicLine(initPoint, eachPoints, mBaiduMap);
+//						initPoint = new Points(eachPoints.getAbsoluteLongitude(), 
+//								eachPoints.getAbsoluteLatitude(), eachPoints.getAbsoluteAltitude());
+//					}
 				}
 			}
 		} else {
@@ -523,8 +502,19 @@ public class MainActivity extends Activity {
 	}
 	private void drawPoint(ArrayList<SpotPointsModel> listSpotPoints) {
 		if(listSpotPoints.size()>0) {
-			for(SpotPointsModel each:listSpotPoints) {
+			for(SpotPointsModel each:listSpotPoints) {//景点
 				if(each.getSpotPoints()!=null&&each.getSpotPoints().size()>0) {
+					LatLng pointLabel = new LatLng(each.getSpotPoints().get(0).getAbsoluteLatitude(), 
+							each.getSpotPoints().get(0).getAbsoluteLongitude());
+					OverlayOptions textOption = new TextOptions()  
+					.bgColor(0xAAFFFF00) 
+					.fontSize(24)  
+					.fontColor(0xFFFF00FF)  
+					.text(each.getScenicspotName())
+					.zIndex(9)
+					.position(pointLabel);  
+					//在地图上添加该文字对象并显示  
+					mBaiduMap.addOverlay(textOption);
 					DrawToolUtil.drawSinglePoint(each.getSpotPoints().get(0),
 							each.getScenicspotName(), mBaiduMap);
 				}
@@ -546,6 +536,10 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
+				soundPool = new SoundPool(1, // maxStreams参数，该参数为设置同时能够播放多少音效
+			            AudioManager.STREAM_MUSIC, // streamType参数，该参数设置音频类型，在游戏中通常设置为：STREAM_MUSIC
+			            0 // srcQuality参数，该参数设置音频文件的质量，目前还没有效果，设置为0为默认值。
+						);
 				if(sectionNameEdit.getText().toString().equals("")) {
 					Toast.makeText(MainActivity.this, "请输入路线名称", Toast.LENGTH_SHORT).show();
 					return;
@@ -561,6 +555,8 @@ public class MainActivity extends Activity {
 					e.printStackTrace();
 				}
 				locFollow = true;
+				mBaiduMap.clear();
+				initPointAll = null;
 				insertSection = new SectionPointsModel();
 				insertSection.setScenicLinename(sectionNameEdit.getText().toString());
 				insertSection.setScenicId(scenicId);
@@ -728,8 +724,7 @@ public class MainActivity extends Activity {
 								scenicId = lists.get(which).getScenicId();
 //								dataInitHelper.initSpotAndLine(lists.get(which).getScenicId());
 								dataInitHelper.testSpotDataSubmited(lists.get(which).getScenicId());
-								imgLoc.setVisibility(View.VISIBLE);
-								initRayMenu();
+								
 							}
 						})
 						.create();
@@ -756,31 +751,30 @@ public class MainActivity extends Activity {
 				double longitude = location.getLongitude();
 				double latitude = location.getLatitude();
 				double altitude = location.getAltitude();
-				latitude = 4.9E-324;
 				if (longitude< 0.00001 || latitude <0.00001
 						|| longitude==0.0 || latitude==0.0 ) {
 					Toast.makeText(MainActivity.this, "数据未正常获取到！", Toast.LENGTH_SHORT).show();
-					mLocClient.stop();
-					new Thread() {
-						@Override
-						public void run() {
-							AudioManager am = (AudioManager) MainActivity.this
-		                            .getSystemService(Context.AUDIO_SERVICE);// 实例化AudioManager对象
-				            float audioMaxVolumn = // 返回当前AudioManager对象的最大音量值
-				            		am.getStreamMaxVolume(AudioManager.STREAM_MUSIC); 
-				            float audioCurrentVolumn = am // 返回当前AudioManager对象的音量值
-				                            .getStreamVolume(AudioManager.STREAM_MUSIC);
-				            float volumnRatio = audioCurrentVolumn / audioMaxVolumn;
-							soundPool.play(soundPool.load(MainActivity.this, R.raw.dontpanic, 1), 
-									volumnRatio, volumnRatio, 1, 0, 1);
-							soundPool.release();
-							mLocClient.start();
-							mLocClient.requestLocation();
-						};
-					}.start();
+//					mLocClient.stop();
+					
+					AudioManager am = (AudioManager) MainActivity.this
+                            .getSystemService(Context.AUDIO_SERVICE);// 实例化AudioManager对象
+		            float audioMaxVolumn = // 返回当前AudioManager对象的最大音量值
+		            		am.getStreamMaxVolume(AudioManager.STREAM_MUSIC); 
+		            float audioCurrentVolumn = am // 返回当前AudioManager对象的音量值
+		                            .getStreamVolume(AudioManager.STREAM_MUSIC);
+		            float volumnRatio = audioCurrentVolumn / audioMaxVolumn;
+		            int id = soundPool.load(MainActivity.this, R.raw.dontpanic, 1);
+		            int streamID = -1;
+		            do {
+		                streamID = soundPool.play(id, volumnRatio, volumnRatio, 1, 0, 1f);
+		            } while(streamID==0);
 					
 					return;
 				}
+				LatLng ll = new LatLng(location.getLatitude(),
+						location.getLongitude());
+				MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
+				mBaiduMap.setMapStatus(u);
 				Points point = new Points(longitude, latitude, altitude);
 				DrawToolUtil.drawDynamicLine(initPointAll ,point, mBaiduMap);
 				initPointAll = new Points(longitude, latitude, altitude);
@@ -888,6 +882,10 @@ public class MainActivity extends Activity {
 
 	public void setmBaiduMap(BaiduMap mBaiduMap) {
 		this.mBaiduMap = mBaiduMap;
+	}
+
+	public ImageView getImgLoc() {
+		return imgLoc;
 	}
 
 }

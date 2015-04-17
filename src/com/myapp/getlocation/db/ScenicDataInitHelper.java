@@ -22,12 +22,14 @@ import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.j256.ormlite.dao.CloseableIterator;
 import com.j256.ormlite.dao.Dao;
 import com.myapp.getlocation.Constants;
 import com.myapp.getlocation.activity.Activity;
+import com.myapp.getlocation.activity.MainActivity;
 import com.myapp.getlocation.application.Application;
 import com.myapp.getlocation.entity.Points;
 import com.myapp.getlocation.entity.ScenicModel;
@@ -130,10 +132,10 @@ public class ScenicDataInitHelper {
 				if(arg0 != null) {
 					daoSpotPoints.delete(arg0);
 				}
-				ArrayList<SectionPointsModel> arg1 = (ArrayList)daoSectionPoints.queryForAll();
-				if(arg1 != null) {
-					daoSectionPoints.delete(arg1);
-				}
+//				ArrayList<SectionPointsModel> arg1 = (ArrayList)daoSectionPoints.queryForAll();
+//				if(arg1 != null) {
+//					daoSectionPoints.delete(arg1);
+//				}
                 JSONArray jsonArray = new JSONArray(json);
                 for (int i = 0; i < jsonArray.length(); i++) {
                 	String scenicName = jsonArray.getJSONObject(i).getString("scenicSpotName");
@@ -239,7 +241,7 @@ public class ScenicDataInitHelper {
 	}
 	
 	public void testSectionDataSubmited(final String scenicId) {
-		boolean result = false;
+		boolean isHave = false;
 		final ArrayList<SectionPointsModel> unsubListSection = new ArrayList<SectionPointsModel>();
 		if(daoSectionPoints != null) {
 			CloseableIterator<SectionPointsModel> iterator = daoSectionPoints.iterator();
@@ -252,9 +254,9 @@ public class ScenicDataInitHelper {
 			}
 		}
 		if(unsubListSection.size()>0) {
-			result = true;
+			isHave = true;
 		}
-		if(result) {
+		if(isHave) {
 			Dialog alertDialog = new AlertDialog.Builder(context)
 			.setTitle("警告")
 			.setMessage("有未提交数据，是否先提交？")
@@ -280,6 +282,9 @@ public class ScenicDataInitHelper {
 	}
 	
 	public void initSpotAndLine(final String scenicId) {
+		MainActivity mainActivity = (MainActivity)context;
+		mainActivity.getImgLoc().setVisibility(View.VISIBLE);
+		mainActivity.initRayMenu();
 		
 		// 远程连接时，使用进度对话框
 		ProgressDialog defaultDialog = new ProgressDialog(context);

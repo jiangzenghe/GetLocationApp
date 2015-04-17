@@ -138,6 +138,7 @@ public class ScenicSectionPointView extends LinearLayout {
 						ArrayList<Points> points = bean.getSectionPoints();
 						if (points.size() == 0) return true;	
 						DrawToolUtil.drawDynamicLineName(points, bean.getScenicLinename(), mBaiduMap);
+						DrawToolUtil.drawDynamicLine(points, mBaiduMap);
 						int index = points.size()/2 + 1;
 						Points point = points.get(index);
 						LatLng center = new LatLng(point.getAbsoluteLatitude(), point.getAbsoluteLongitude());
