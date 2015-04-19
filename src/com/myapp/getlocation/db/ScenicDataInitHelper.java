@@ -218,7 +218,7 @@ public class ScenicDataInitHelper {
 		if(result) {
 			Dialog alertDialog = new AlertDialog.Builder(context)
 			.setTitle("警告")
-			.setMessage("有未提交数据，是否先提交？")
+			.setMessage("有未提交景点数据，是否先提交？")
 			.setPositiveButton("确定", new DialogInterface.OnClickListener() {
 				
 				@Override
@@ -259,7 +259,7 @@ public class ScenicDataInitHelper {
 		if(isHave) {
 			Dialog alertDialog = new AlertDialog.Builder(context)
 			.setTitle("警告")
-			.setMessage("有未提交数据，是否先提交？")
+			.setMessage("有未提交路线数据，是否先提交？")
 			.setPositiveButton("确定", new DialogInterface.OnClickListener() {
 				
 				@Override

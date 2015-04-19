@@ -27,6 +27,7 @@ import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
+import com.baidu.location.LocationClientOption.LocationMode;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BaiduMap.OnMarkerClickListener;
 import com.baidu.mapapi.map.BitmapDescriptor;
@@ -124,11 +125,15 @@ public class MainActivity extends Activity {
 		mLocClient.registerLocationListener(myListener);
 		LocationClientOption option = new LocationClientOption();
 		option.setOpenGps(true);//
+		option.setLocationMode(LocationMode.Device_Sensors);
 		option.setAddrType("all");
 		option.setCoorType("bd09ll"); //
 		option.setScanSpan(10000);
 		mLocClient.setLocOption(option);
 		mLocClient.start();
+		defaultDialog = new ProgressDialog(MainActivity.this);
+		defaultDialog.setMessage("定位中");
+		defaultDialog.show();
 		
 		imgLoc = (ImageView)findViewById(R.id.img_location);
 		imgLoc.setVisibility(View.GONE);
@@ -371,8 +376,11 @@ public class MainActivity extends Activity {
 						Toast.makeText(MainActivity.this, "没有需要提交的景点数据", Toast.LENGTH_SHORT).show();
 						return;
 					}
-					defaultDialog = new ProgressDialog(MainActivity.this);
-					defaultDialog.setMessage("提交数据中");
+					
+					if (defaultDialog != null && defaultDialog.isShowing()) {
+						defaultDialog.cancel();
+					}
+					defaultDialog.setMessage("提交景点数据中");
 					defaultDialog.show();
 					new SubmitDataTask().execute(submitSpotPoints);
 				}
@@ -417,10 +425,12 @@ public class MainActivity extends Activity {
 						Toast.makeText(MainActivity.this, "没有需要提交的路段数据", Toast.LENGTH_SHORT).show();
 						return;
 					}
-					defaultDialog = new ProgressDialog(MainActivity.this);
-					defaultDialog.setMessage("等待中");
+					if (defaultDialog != null && defaultDialog.isShowing()) {
+						defaultDialog.cancel();
+					}
+					defaultDialog.setMessage("提交路线数据中");
 					defaultDialog.show();
-					new SubmitLineTask().execute(submitSectionPoints);
+					new SubmitLineTask().execute(submitSectionPoints);//
 				}
 			})
 			.setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -600,11 +610,11 @@ public class MainActivity extends Activity {
 		protected void onPostExecute(Integer result) {
 			// TODO: check this.exception
 			Log.i("doInBackground", "execute result is:" + result);
-			if(defaultDialog != null) {
+			if(defaultDialog != null && defaultDialog.isShowing()) {
 				defaultDialog.cancel();
 			}
 			if (result == 0) {
-				Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT)
+				Toast.makeText(MainActivity.this, "提交景点出错", Toast.LENGTH_SHORT)
 						.show();
 			} else {
 				if (daoSpotPoints != null) {
@@ -613,10 +623,10 @@ public class MainActivity extends Activity {
 							listSpotPoints.get(i).setSubmited(true);
 							daoSpotPoints.createOrUpdate(listSpotPoints.get(i));
 						}
-						Toast.makeText(MainActivity.this, "提交成功",
+						Toast.makeText(MainActivity.this, "提交景点成功",
 								Toast.LENGTH_SHORT).show();
 					} catch (SQLException e) {
-						Toast.makeText(MainActivity.this, "提交成功,修改提交状态出错",
+						Toast.makeText(MainActivity.this, "提交景点成功,修改景点提交状态出错",
 								Toast.LENGTH_SHORT).show();
 					}
 				}
@@ -646,11 +656,11 @@ public class MainActivity extends Activity {
 		protected void onPostExecute(Integer feed) {
 			// TODO: check this.exception
 			Log.i("doInBackground", "execute result is:" + feed);
-			if(defaultDialog != null) {
+			if(defaultDialog != null && defaultDialog.isShowing()) {
 				defaultDialog.cancel();
 			}
 			if (result == 0) {
-				Toast.makeText(MainActivity.this, "提交出错", Toast.LENGTH_SHORT)
+				Toast.makeText(MainActivity.this, "提交路线出错", Toast.LENGTH_SHORT)
 						.show();
 			} else {
 				if (daoSectionPoints != null) {
@@ -660,10 +670,10 @@ public class MainActivity extends Activity {
 							daoSectionPoints.createOrUpdate(listSectionPoints
 									.get(i));
 						}
-						Toast.makeText(MainActivity.this, "提交成功",
+						Toast.makeText(MainActivity.this, "提交路线成功",
 								Toast.LENGTH_SHORT).show();
 					} catch (SQLException e) {
-						Toast.makeText(MainActivity.this, "提交成功,修改提交状态出错",
+						Toast.makeText(MainActivity.this, "提交路线成功,修改路线提交状态出错",
 								Toast.LENGTH_SHORT).show();
 					}
 				}
@@ -684,9 +694,16 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onReceiveLocation(BDLocation location) {
+			if(defaultDialog != null && defaultDialog.isShowing()) {
+				defaultDialog.cancel();
+			}
 			// map view
 			if (location == null || mMapView == null)
 				return;
+			if(location.getLocType() != BDLocation.TypeGpsLocation) {
+				Toast.makeText(MainActivity.this, "不是GPS定位结果，该次定位数据将会被舍弃", Toast.LENGTH_SHORT).show();
+				return;
+			}
 			MyLocationData locData = new MyLocationData.Builder()
 					.accuracy(location.getRadius())
 					//
